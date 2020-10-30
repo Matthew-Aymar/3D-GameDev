@@ -41,14 +41,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\include;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\include;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\include;C:\Users\matta\Documents\Libs\SDL2-2.0.12\include;C:\Users\matta\Documents\Git\gfc\include;C:\Users\matta\Documents\Git\gfc\simple_json\include;C:\Users\matta\Documents\Git\gfc\simple_logger\include;C:\VulkanSDK\1.1.130.0\Include;C:\Users\matta\Documents\Git\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\lib\x86;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\lib\x86;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\lib\x86;C:\Users\matta\Documents\Libs\SDL2-2.0.12\lib\x86;C:\VulkanSDK\1.1.130.0\Lib32;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\include;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\include;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\include;C:\Users\matta\Documents\Libs\SDL2-2.0.12\include;C:\Users\matta\Documents\Git\gfc\include;C:\Users\matta\Documents\Git\gfc\simple_json\include;C:\Users\matta\Documents\Git\gfc\simple_logger\include;C:\VulkanSDK\1.2.148.1\Include;C:\Users\matta\Documents\Git\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\lib\x86;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\lib\x86;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\lib\x86;C:\Users\matta\Documents\Libs\SDL2-2.0.12\lib\x86;C:\VulkanSDK\1.2.148.1\Lib32;$(LibraryPath)</LibraryPath>
     <OutDir>..\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\include;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\include;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\include;C:\Users\matta\Documents\Libs\SDL2-2.0.12\include;C:\Users\matta\Documents\Git\gfc\include;C:\Users\matta\Documents\Git\gfc\simple_json\include;C:\Users\matta\Documents\Git\gfc\simple_logger\include;C:\VulkanSDK\1.1.130.0\Include;C:\Users\matta\Documents\Git\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\lib\x86;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\lib\x86;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\lib\x86;C:\Users\matta\Documents\Libs\SDL2-2.0.12\lib\x86;C:\VulkanSDK\1.1.130.0\Lib32;C:\Users\matta\Documents\Git\gfc\libs;C:\Users\matta\Documents\Git\gfc\simple_json\libs;C:\Users\matta\Documents\Git\gfc\simple_logger\libs;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\include;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\include;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\include;C:\Users\matta\Documents\Libs\SDL2-2.0.12\include;C:\Users\matta\Documents\Git\gfc\include;C:\Users\matta\Documents\Git\gfc\simple_json\include;C:\Users\matta\Documents\Git\gfc\simple_logger\include;C:\VulkanSDK\1.2.148.1\Include;C:\Users\matta\Documents\Git\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\matta\Documents\Libs\SDL2_image-2.0.5\lib\x86;C:\Users\matta\Documents\Libs\SDL2_mixer-2.0.4\lib\x86;C:\Users\matta\Documents\Libs\SDL2_ttf-2.0.15\lib\x86;C:\Users\matta\Documents\Libs\SDL2-2.0.12\lib\x86;C:\VulkanSDK\1.2.148.1\Lib32;C:\Users\matta\Documents\Git\gfc\libs;C:\Users\matta\Documents\Git\gfc\simple_json\libs;C:\Users\matta\Documents\Git\gfc\simple_logger\libs;$(LibraryPath)</LibraryPath>
     <OutDir>..</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,6 +112,9 @@
     <ClInclude Include="..\include\gf3d_validation.h" />
     <ClInclude Include="..\include\gf3d_vgraphics.h" />
     <ClInclude Include="..\include\gf3d_vqueues.h" />
+    <ClInclude Include="..\include\my_collider.h" />
+    <ClInclude Include="..\include\my_entity.h" />
+    <ClInclude Include="..\include\my_player.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\gfc\simple_json\src\simple_json.c" />
@@ -144,6 +147,9 @@
     <ClCompile Include="..\src\gf3d_validation.c" />
     <ClCompile Include="..\src\gf3d_vgraphics.c" />
     <ClCompile Include="..\src\gf3d_vqueues.c" />
+    <ClCompile Include="..\src\my_collider.c" />
+    <ClCompile Include="..\src\my_entity.c" />
+    <ClCompile Include="..\src\my_player.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

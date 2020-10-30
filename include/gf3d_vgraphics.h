@@ -8,7 +8,7 @@
 #include "gf3d_pipeline.h"
 #include "gf3d_commands.h"
 
-#define GF3D_VGRAPHICS_DISCRETE 1   //Choosing whether to use discrete [1] or integrated graphics [0]
+#define GF3D_VGRAPHICS_DISCRETE 2   //Choosing whether to use discrete [1] or integrated graphics [0]
 
 /**
  * @brief init Vulkan / SDL, setup device and initialize infrastructure for 3d graphics
@@ -53,5 +53,9 @@ Command *gf3d_vgraphics_get_graphics_command_pool();
 
 VkImageView gf3d_vgraphics_create_image_view(VkImage image, VkFormat format);
 
+/*
+	@brief set the ubo view to the specified matrix
+*/
+gf3d_vgraphics_setubo(Matrix4 current);
 
 #endif

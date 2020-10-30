@@ -706,5 +706,17 @@ VkImageView gf3d_vgraphics_create_image_view(VkImage image, VkFormat format)
     return imageView;
 }
 
+gf3d_vgraphics_setubo(Matrix4 current)
+{
+	/*slog("======================");
+	gfc_matrix_slog(current);
+	slog("----------------------");
+	gfc_matrix_slog(gf3d_vgraphics.ubo.view);
+	slog("======================");*/
+	gfc_matrix_copy(
+		gf3d_vgraphics.ubo.view,
+		current);
+}
+
 /*eol@eof*/
 

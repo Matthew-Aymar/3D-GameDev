@@ -2,7 +2,7 @@
 #define __GF3D_CAMERA_H__
 
 #include "gfc_matrix.h"
-
+#include "gf3d_vgraphics.h"
 /**
  * @brief get the current camera view
  * @param view output, the matrix provided will be populated with the current camera information
@@ -26,16 +26,26 @@ void gf3d_camera_look_at(
     Vector3D up
 );
 
+/*
+	@brief initialize the camera matrix to the ubo origin
+*/
+void gf3d_camera_set(Matrix4 start);
+
 /**
  * @brief explicitely set the camera positon, holding all other parameters the same
  * @param position the new position for the camera
  */
 void gf3d_camera_set_position(Vector3D position);
 
-/**
- * @brief move the camera relatively based on the vector provided
- * @param move the ammount to move the camera
- */
-void gf3d_camera_move(Vector3D move);
+/*
+	@brief returns the current position of the camera
+*/
+Vector3D gf3d_camera_get_pos();
+
+/*
+	@brief calls both the move and rotate functions to keep the camera tied to the player
+	@param two vector3Ds for player position and input rotation
+*/
+void gf3d_camera_update(Vector3D pos, Vector3D rotation);
 
 #endif
