@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	ent2->model = gf3d_model_load("cube");
 
 	ent1->position = vector3d(10, 10, 0);
-	ent2->position = vector3d(-10, -10, 0);
+	ent2->position = vector3d(0, 0, 0);
 	// main game loop
 	slog("gf3d main loop begin");
 	slog_sync();
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	gf3d_camera_set(gf3d_vgraphics_get_uniform_buffer_object().view);
 
 	collider_new(&ent1->col, vector3d(10, 10, 0), vector3d(1, 1, 1));
-	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(1, 1, 1));
+	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 5));
 
 	while (!done)
 	{
@@ -127,8 +127,6 @@ int main(int argc, char *argv[])
 		else { inputs[ability] = false; }
 
 		player_move(inputs, p->_playernum, mousex, mousey);
-
-		slog("%d", collider_rect_rect(p->ent->col, ent1->col));
 
 		// configure render command for graphics command pool
 		// for each mesh, get a command and configure it from the pool

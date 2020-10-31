@@ -9,6 +9,7 @@
 typedef struct Entity_S
 {
 	Uint8 _inuse;
+	Uint8 _id;
 
 	Vector3D position;
 	float rottarget;
@@ -37,6 +38,6 @@ void entity_draw_all(Uint32 buffer, VkCommandBuffer command);
 /*
 	@brief checks param entity collider with all other entitites
 */
-void entity_check_col(Entity *self);
+Uint8 entity_check_col(Entity *self);
 
 #endif

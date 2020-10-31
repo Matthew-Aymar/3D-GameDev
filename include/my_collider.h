@@ -5,6 +5,7 @@
 
 typedef struct Rectcol_S
 {
+	Uint8 _active; //false to not be used in collision checks
 	Vector3D position;
 	Vector3D dimension;
 }Rectcol;
@@ -13,7 +14,7 @@ typedef struct Rectcol_S
 	@breif checks 2 rectangle colliders to check for overlap
 	@return 0 on no collision 1 on collision
 */
-Uint8 collider_rect_rect(Rectcol col1, Rectcol col2);
+Uint8 collider_rect_rect(Rectcol *col1, Rectcol *col2);
 
 /*
 	@brief initializes a new collider

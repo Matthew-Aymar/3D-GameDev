@@ -48,6 +48,7 @@ Entity *entity_new()
 			memset(&entity_manager.entity_list[i], 0, sizeof(Entity));
 			entity_manager.entity_list[i]._inuse = 1;
 			gfc_matrix_identity(entity_manager.entity_list[i].modelmat);
+			entity_manager.entity_list[i]._id = i;
 			return &entity_manager.entity_list[i];
 		}
 	}
@@ -70,9 +71,9 @@ void entity_draw(Entity *self, Uint32 buffer, VkCommandBuffer command)
 {
 	gfc_matrix_make_translation(self->modelmat, self->position);
 
-	self->col.position.x = self->position.x;
-	self->col.position.y = self->position.y;
-	self->col.position.z = self->position.z;
+	self->col.position.x = self->position.x - (self->col.dimension.x * 0.5);
+	self->col.position.y = self->position.y - (self->col.dimension.y * 0.5);
+	self->col.position.z = self->position.z - (self->col.dimension.z * 0.5);
 
 	gfc_matrix_rotate(
 		self->modelmat,
@@ -95,13 +96,21 @@ void entity_draw_all(Uint32 buffer, VkCommandBuffer command)
 	}
 }
 
-void entity_check_col(Entity *self)
+Uint8 entity_check_col(Entity *self)
 {
 	int i = 0;
 	for (i = 0; i < entity_manager.entity_max; i++)
 	{
 		if (entity_manager.entity_list[i]._inuse == true)
 		{
+			if (entity_manager.entity_list[i]._id != self->_id)
+			{
+				if (collider_rect_rect(&self->col, &entity_manager.entity_list[i].col))
+				{
+					return 1;
+				}
+			}
 		}
 	}
+	return 0;
 }
