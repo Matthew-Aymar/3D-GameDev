@@ -49,6 +49,8 @@ Entity *entity_new()
 			entity_manager.entity_list[i]._inuse = 1;
 			gfc_matrix_identity(entity_manager.entity_list[i].modelmat);
 			entity_manager.entity_list[i]._id = i;
+			entity_manager.entity_list[i].velmax = 10;
+			entity_manager.entity_list[i].grounded = true;
 			return &entity_manager.entity_list[i];
 		}
 	}
@@ -99,18 +101,46 @@ void entity_draw_all(Uint32 buffer, VkCommandBuffer command)
 Uint8 entity_check_col(Entity *self)
 {
 	int i = 0;
+	int x = 0;
+	Uint8 col;
+	for (x = 0; x < 6; x++)
+	{
+		self->collisions[x] = 0;
+	}
+
 	for (i = 0; i < entity_manager.entity_max; i++)
 	{
 		if (entity_manager.entity_list[i]._inuse == true)
 		{
 			if (entity_manager.entity_list[i]._id != self->_id)
 			{
-				if (collider_rect_rect(&self->col, &entity_manager.entity_list[i].col))
+				col = collider_rect_rect(&self->col, &entity_manager.entity_list[i].col);
+				if (col != 0)
 				{
-					return 1;
+					for (x = 0; x < 6; x++)
+					{
+						if (self->collisions[x] == 0)
+						{
+							self->collisions[x] = col;
+							break;
+						}
+					}
 				}
 			}
 		}
 	}
 	return 0;
+}
+
+Uint8 entity_get_col_by_type(Entity *self, Uint8 type)
+{
+	int x = 0;
+	for (x = 0; x < 6; x++)
+	{
+		if (self->collisions[x] == type)
+		{
+			return true;
+		}
+	}
+	return false;
 }

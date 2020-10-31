@@ -13,13 +13,18 @@ typedef struct Entity_S
 
 	Vector3D position;
 	float rottarget;
-	float lasttarget;
 	float rotcurrent;
-	float rotdist;
 	Uint8 distset;
 	Model *model;
 	Matrix4 modelmat;
 
+	Uint8 grounded;
+	float vel;
+	float accel;
+	float velmax;
+
+	Uint8 collisions[6]; //collection of current relevant collisions
+	
 	Rectcol col;
 } Entity;
 
@@ -39,5 +44,10 @@ void entity_draw_all(Uint32 buffer, VkCommandBuffer command);
 	@brief checks param entity collider with all other entitites
 */
 Uint8 entity_check_col(Entity *self);
+
+/*
+	@brief returns true if specified collision type is in the collisions
+*/
+Uint8 entity_get_col_by_type(Entity *self, Uint8 type);
 
 #endif

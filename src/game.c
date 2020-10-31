@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	
 	int mousex, mousey;
 
-	Entity *ent1, *ent2;
+	Entity *ent1, *ent2, *ground;
 
 	Player *p;
 
@@ -60,12 +60,15 @@ int main(int argc, char *argv[])
 	
 	ent1 = entity_new();
 	ent2 = entity_new();
+	ground = entity_new();
 
 	p = player_new(1);
 	p->ent->model = gf3d_model_load("dino");
 
 	ent1->model = gf3d_model_load("cube");
 	ent2->model = gf3d_model_load("cube");
+
+	ground->model = gf3d_model_load("cube");
 
 	ent1->position = vector3d(10, 10, 0);
 	ent2->position = vector3d(0, 0, 0);
@@ -79,8 +82,10 @@ int main(int argc, char *argv[])
 
 	gf3d_camera_set(gf3d_vgraphics_get_uniform_buffer_object().view);
 
-	collider_new(&ent1->col, vector3d(10, 10, 0), vector3d(1, 1, 1));
-	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 5));
+	collider_new(&ent1->col, vector3d(10, 10, 0), vector3d(1, 1, 100), Wall);
+	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 5), Kinematic);
+
+	collider_new(&ground->col, vector3d(0, 0, -3), vector3d(50, 50, 0), Ground);
 
 	while (!done)
 	{
