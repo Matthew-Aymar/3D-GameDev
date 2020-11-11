@@ -10,6 +10,8 @@ typedef struct Entity_S
 {
 	Uint8 _inuse;
 	Uint8 _id;
+	Uint8 _noupdate;
+	Uint8 _dead;
 
 	Vector3D position;
 	float rottarget;
@@ -57,5 +59,7 @@ Uint8 entity_check_col(Entity *self);
 	@brief returns true if specified collision type is in the collisions
 */
 Uint8 entity_get_col_by_type(Entity *self, Uint8 type);
+
+void entity_scale_modelmat(Entity *self, Vector3D scale);
 
 #endif

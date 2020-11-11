@@ -72,6 +72,8 @@ void entity_free(Entity *self)
 
 void entity_draw(Entity *self, Uint32 buffer, VkCommandBuffer command)
 {
+	if (self->_dead)
+		return;
 	if (self->model != NULL)
 	{
 		gf3d_model_draw(self->model, buffer, command, self->modelmat);
@@ -96,6 +98,12 @@ void entity_draw_all(Uint32 buffer, VkCommandBuffer command)
 
 void entity_update(Entity *self)
 {
+	if (self->_noupdate)
+		return;
+
+	if (self->_dead)
+		return;
+
 	if (self->hasthink)
 	{
 		if (self->thinktarget != NULL)
@@ -147,6 +155,9 @@ Uint8 entity_check_col(Entity *self)
 		self->collisions[x] = 0;
 	}
 
+	if (self->_dead)
+		return;
+
 	for (i = 0; i < entity_manager.entity_max; i++)
 	{
 		if (entity_manager.entity_list[i]._inuse == true)
@@ -182,4 +193,12 @@ Uint8 entity_get_col_by_type(Entity *self, Uint8 type)
 		}
 	}
 	return false;
+}
+
+void entity_scale_modelmat(Entity *self, Vector3D scale)
+{
+	self->modelmat[0][0] *= scale.x * 0.5;
+	self->modelmat[1][1] *= scale.y * 0.5;
+	self->modelmat[2][2] *= scale.z * 0.5;
+	self->modelmat[3][3] *= 1;
 }

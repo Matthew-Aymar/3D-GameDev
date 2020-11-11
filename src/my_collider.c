@@ -15,10 +15,7 @@ Uint8 collider_rect_rect(Rectcol *col1, Rectcol *col2)
 	if (!col1->_active || !col2->_active)
 		return 0;
 
-	if ((col1->type == Wall && col2->type == Wall) ||
-		(col1->type == Ground && col2->type == Ground) ||
-		(col1->type == Wall && col2->type == Ground) ||
-		(col1->type == Ground && col2->type == Wall))
+	if ((col1->type != Kinematic && col2->type != Kinematic)) 
 	{
 		//Nothing will come out of the collision so ignore
 		return 0;
@@ -56,9 +53,21 @@ Uint8 collider_rect_rect(Rectcol *col1, Rectcol *col2)
 	if (xcol && ycol && zcol)
 	{
 		if (col1->type == Wall || col2->type == Wall)
-			return 1;
+			return Wall;
 		else if (col1->type == Ground || col2->type == Ground)
-			return 2;
+			return Ground;
+		else if (col1->type == Conv || col2->type == Conv)
+			return Conv;
+		else if (col1->type == Jump || col2->type == Jump)
+			return Jump;
+		else if (col1->type == Spik || col2->type == Spik)
+			return Spik;
+		else if (col1->type == Spin || col2->type == Spin)
+			return Spin;
+		else if (col1->type == Tele1 || col2->type == Tele1)
+			return Tele1;
+		else if (col1->type == Tele2 || col2->type == Tele2)
+			return Tele2;
 	}
 	else { return 0; }
 }
@@ -94,6 +103,8 @@ void collider_draw(Rectcol *rc, Uint32 buffer, VkCommandBuffer command)
 	if (!draw)
 		return;
 
+	if (rc->_drawskip == true)
+		return;
 	if (rc->_active == false)
 		return;
 

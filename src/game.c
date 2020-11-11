@@ -120,6 +120,75 @@ void ground_set(Entity *ground_cols[22])
 	//Platforms
 }
 
+void interactable_set(Entity *i_conv, Entity *i_jump, Entity *i_spik, Entity *i_spin, Entity *i_tele1, Entity *i_tele2)
+{
+	Vector3D scale;
+	Player *p = player_get_by_num(1);
+
+	i_conv = entity_new();
+	i_jump = entity_new();
+	i_spik = entity_new();
+	i_spin = entity_new();
+	i_tele1 = entity_new();
+	i_tele2 = entity_new();
+
+	i_conv->model = gf3d_model_load("Conv");
+	i_jump->model = gf3d_model_load("Jump");
+	i_spik->model = gf3d_model_load("Spik");
+	i_spin->model = gf3d_model_load("Spin");
+	i_tele1->model = gf3d_model_load("Tele");
+	i_tele2->model = gf3d_model_load("Tele");
+
+	scale = vector3d(0.5, 0.5, 0.5);
+
+	i_conv->position = vector3d(0, 15, -8);
+	i_jump->position = vector3d(0, -15, -8);
+	i_spik->position = vector3d(15, 0, -8);
+	i_spin->position = vector3d(-15, 0, -8);
+	i_tele1->position = vector3d(30, 0, -8);
+	i_tele2->position = vector3d(-30, 0, -8);
+
+	gfc_matrix_make_translation(i_conv->modelmat, i_conv->position);
+	gfc_matrix_make_translation(i_jump->modelmat, i_jump->position);
+	gfc_matrix_make_translation(i_spik->modelmat, i_spik->position);
+	gfc_matrix_make_translation(i_spin->modelmat, i_spin->position);
+	gfc_matrix_make_translation(i_tele1->modelmat, i_tele1->position);
+	gfc_matrix_make_translation(i_tele2->modelmat, i_tele2->position);
+
+	entity_scale_modelmat(i_conv, scale);
+	entity_scale_modelmat(i_jump, scale);
+	entity_scale_modelmat(i_spik, scale);
+	entity_scale_modelmat(i_spin, scale);
+	entity_scale_modelmat(i_tele1, scale);
+	entity_scale_modelmat(i_tele2, scale);
+
+	i_conv->_noupdate = true;
+	i_jump->_noupdate = true;
+	i_spik->_noupdate = true;
+	i_spin->_noupdate = true;
+	i_tele1->_noupdate = true;
+	i_tele2->_noupdate = true;
+
+	collider_new(&i_conv->col, i_conv->position, vector3d(10, 10, 4), Conv);
+	collider_new(&i_jump->col, i_jump->position, vector3d(10, 10, 4), Jump);
+	collider_new(&i_spik->col, i_spik->position, vector3d(10, 10, 4), Spik);
+	collider_new(&i_spin->col, i_spin->position, vector3d(10, 10, 4), Spin);
+	collider_new(&i_tele1->col, i_tele1->position, vector3d(10, 10, 4), Tele1);
+	collider_new(&i_tele2->col, i_tele2->position, vector3d(10, 10, 4), Tele2);
+
+	i_conv->col._drawskip = true;
+	i_jump->col._drawskip = true;
+	i_spik->col._drawskip = true;
+	i_spin->col._drawskip = true;
+	i_tele1->col._drawskip = true;
+	i_tele2->col._drawskip = true;
+
+	p->t1 = i_tele1->position;
+	p->t1.z += 5;
+	p->t2 = i_tele2->position;
+	p->t2.z += 5;
+}
+
 int main(int argc, char *argv[])
 {
 	int done = 0;
@@ -143,7 +212,9 @@ int main(int argc, char *argv[])
 	
 	int mousex, mousey;
 
-	Entity *ent1, *ent2, *ground;
+	Entity *ground;
+
+	Entity *i_conv, *i_jump, *i_spik, *i_spin, *i_tele1, *i_tele2;
 
 	Player *p;
 
@@ -177,8 +248,6 @@ int main(int argc, char *argv[])
 	
 	collider_set_draw(true);
 
-	ent1 = entity_new();
-	ent2 = entity_new();
 	ground = entity_new();
 
 	ground_set(ground_cols);
@@ -186,14 +255,11 @@ int main(int argc, char *argv[])
 	p = player_new(1);
 	p->ent->model = gf3d_model_load("dino");
 
-	//ent1->model = gf3d_model_load("cube");
-	//ent2->model = gf3d_model_load("cube");
+	interactable_set(i_conv, i_jump, i_spik, i_spin, i_tele1, i_tele2);
 
 	ground->model = gf3d_model_load("Map");
 
 	ground->position = vector3d(0, 0, -10);
-	ent1->position = vector3d(10, 10, 0);
-	ent2->position = vector3d(0, 0, 0);
 	// main game loop
 	slog("gf3d main loop begin");
 	slog_sync();
@@ -204,11 +270,8 @@ int main(int argc, char *argv[])
 
 	gf3d_camera_set(gf3d_vgraphics_get_uniform_buffer_object().view);
 
-	collider_new(&ent1->col, vector3d(10, 10, 0), vector3d(2, 2, 10), Wall);
 	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 10), Kinematic);
-
-	//entity_ground_set(&ground_cols);
-
+	
 	while (!done)
 	{
 		SDL_PumpEvents();   // update SDL's internal event structures
@@ -291,7 +354,13 @@ int main(int argc, char *argv[])
 
 		if (current_ms >= ms_per_tick)
 		{
-			player_move(inputs, p->_playernum, mousex, mousey);
+			if (!p->ent->_dead)
+				player_move(inputs, p->_playernum, mousex, mousey);
+			else if (p->respawn <= 0)
+			{
+				player_respawn(p);
+			}
+			else { p->respawn--; }
 
 			entity_update_all();
 
@@ -317,7 +386,8 @@ int main(int argc, char *argv[])
 
 		entity_draw_all(bufferFrame, commandBuffer);
 
-		player_draw_attack(bufferFrame, commandBuffer, p->_playernum);
+		if (!p->ent->_dead)
+			player_draw_attack(bufferFrame, commandBuffer, p->_playernum);
 
 		gf3d_command_rendering_end(commandBuffer);
 

@@ -9,6 +9,8 @@
 typedef struct Player_s
 {
 	Uint8 _playernum;	//0 for uninitialized, count starts at 1 - given to by server
+	Uint8 respawn;
+
 	Entity *ent;
 	char *name;			//name of the user
 	Uint8 attack;		//Which attack
@@ -21,6 +23,12 @@ typedef struct Player_s
 	Projectile weapon;
 	Vector3D forward;
 	Uint8 throwcd;		//frames to wait before checking for collision
+
+	float jumpboost;
+	Uint8 hasspun;
+	Vector3D t1;
+	Vector3D t2;
+	Uint8 telecd;
 }Player;
 
 void player_manager_init(Uint8 Max);
@@ -57,5 +65,7 @@ void player_update_attack(Uint8 input, Uint8 num);
 void player_draw_attack(Uint32 buffer, VkCommandBuffer command, Uint8 num);
 
 void player_throw_weapon(Uint8 num);
+
+void player_respawn(Player *p);
 
 #endif

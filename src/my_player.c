@@ -47,6 +47,7 @@ Player *player_new(Uint8 id)
 			player_manager.players[i]._playernum = id;
 			player_manager.players[i].ent = entity_new();
 			player_manager.players[i].armed = true;
+			player_manager.players[i].ent->position = vector3d(0, 0, 5);
 			return &player_manager.players[i];
 		}
 	}
@@ -98,7 +99,7 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		//check if player can jump and adjust their velocity if they can
 		if (input[4] && p->ent->grounded)
 		{
-			p->ent->vel = 1;
+			p->ent->vel = 1 * p->jumpboost;
 			p->ent->accel = 0.035;
 			p->ent->grounded = false;
 		}
@@ -109,15 +110,71 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		//check for collisions before height check
 		entity_check_col(p->ent);
 
+		if (entity_get_col_by_type(p->ent, Conv))
+		{
+			forward.x -= 0.5;
+			vector2d_normalize(&forward);
+		}
+		 
+		if (entity_get_col_by_type(p->ent, Jump))
+		{
+			p->jumpboost = 2;
+		}
+		else { p->jumpboost = 1; }
+		
+		if (entity_get_col_by_type(p->ent, Spik))
+		{
+			p->ent->_dead = true;
+			p->respawn = 100;
+		}
+
+		else if (entity_get_col_by_type(p->ent, Spin))
+		{
+			if (!p->hasspun)
+			{
+				p->hasspun = true;
+				srand((unsigned)time(0) % 1000);
+				p->ent->rotcurrent *= rand();
+			}
+		}
+		else { p->hasspun = false; }
+
+		if (entity_get_col_by_type(p->ent, Tele1))
+		{
+			if (p->telecd <= 0)
+			{
+				p->ent->position = p->t2;
+				p->telecd = 100;
+			}
+		}
+		else 
+		{ 
+			p->telecd--; 
+		}
+
+		if (entity_get_col_by_type(p->ent, Tele2))
+		{
+			if (p->telecd <= 0)
+			{
+				p->ent->position = p->t1;
+				p->telecd = 100;
+			}
+		}
+		else 
+		{ 
+			p->telecd--;
+		}
+
+
 		//check for ground collisions (landing)
-		if (entity_get_col_by_type(p->ent, 2) && up < 0)
+		if (entity_get_col_by_type(p->ent, Ground) && up < 0)
 		{
 			p->ent->col.position.z -= up;
 			p->ent->vel = 0;
 			p->ent->accel = 0;
 			p->ent->grounded = true;
 		}
-		else if (!entity_get_col_by_type(p->ent, 2))
+		else if (!entity_get_col_by_type(p->ent, Ground))
 		{
 			p->ent->accel = 0.035;
 			p->ent->grounded = false;
@@ -129,7 +186,7 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		//Check for a collision
 		entity_check_col(p->ent);
 
-		if (entity_get_col_by_type(p->ent, 1))
+		if (entity_get_col_by_type(p->ent, Wall))
 		{
 			xcol = true;
 			//revert
@@ -142,7 +199,7 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		//Check for collision
 		entity_check_col(p->ent);
 
-		if (entity_get_col_by_type(p->ent, 1))
+		if (entity_get_col_by_type(p->ent, Wall))
 		{
 			//revert
 			ycol = true;
@@ -183,7 +240,7 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		p->forward.z = gf3d_camera_get_height();
 
 		player_throw_weapon(num);
-		p->throwcd = 5;
+		p->throwcd = 7;
 	}
 
 	if (p->armed)
@@ -320,4 +377,10 @@ void player_throw_weapon(Uint8 num)
 
 	p->armed = false;
 	projectile_new(&p->weapon, p->ent->position, p->forward, class_get_throw(p->class_type));
+}
+
+void player_respawn(Player *p)
+{
+	p->ent->position = vector3d(0, 0, 5);
+	p->ent->_dead = false;
 }
