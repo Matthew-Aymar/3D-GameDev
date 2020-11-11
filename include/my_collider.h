@@ -2,6 +2,7 @@
 #define __MY_COLLIDER_H__
 
 #include "gfc_vector.h"
+#include "gf3d_model.h"
 
 enum col_types { Ground = 1, Wall = 2, Kinematic = 3 };
 
@@ -11,6 +12,7 @@ typedef struct Rectcol_S
 	Uint8 type; //Ground, Wall, Kinematic
 	Vector3D position;
 	Vector3D dimension;
+	Model* colmodel;
 }Rectcol;
 
 /*
@@ -25,4 +27,9 @@ Uint8 collider_rect_rect(Rectcol *col1, Rectcol *col2);
 */
 void collider_new(Rectcol *col, Vector3D pos, Vector3D dim, Uint8 type);
 
+void collider_free(Rectcol *col);
+
+void collider_set_draw(Uint8 drawmode);
+
+void collider_draw(Rectcol *rc, Uint32 buffer, VkCommandBuffer command);
 #endif

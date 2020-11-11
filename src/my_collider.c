@@ -1,6 +1,14 @@
 #include "my_collider.h"
 #include "simple_logger.h"
 
+Uint8 draw;
+Model *colmodel;
+void collider_set_draw(Uint8 drawmode)
+{
+	draw = drawmode;
+	colmodel = gf3d_model_load("cube");
+}
+
 Uint8 collider_rect_rect(Rectcol *col1, Rectcol *col2)
 {
 	Uint8 xcol = 0, ycol = 0, zcol = 0;
@@ -60,7 +68,53 @@ void collider_new(Rectcol *col, Vector3D pos, Vector3D dim, Uint8 type)
 	col->position = vector3d(pos.x - (dim.x * 0.5),
 							 pos.y - (dim.y * 0.5),
 							 pos.z - (dim.z * 0.5));
-	col->dimension = dim;
+	col->dimension = vector3d(dim.x, dim.y, dim.z);
 	col->_active = true;
 	col->type = type;
+
+	if (draw)
+		col->colmodel = colmodel;
+}
+
+void collider_free(Rectcol *col)
+{
+	if (!col)
+	{
+		slog("Null pointer in entity_free!");
+		return;
+	}
+	col->_active = 0;
+	gf3d_model_free(col->colmodel);
+}
+
+void collider_draw(Rectcol *rc, Uint32 buffer, VkCommandBuffer command)
+{
+	Matrix4 modelmat;
+	Vector3D colpos;
+	if (!draw)
+		return;
+
+	if (rc->_active == false)
+		return;
+
+	if (rc->colmodel == NULL)
+		return;
+
+	gfc_matrix_identity(modelmat);
+
+	//the model draw and colliders have different anchor points so they need to be offset
+	//to be accurate
+	colpos = rc->position;
+	colpos.x += rc->dimension.x * 0.5;
+	colpos.y += rc->dimension.y * 0.5;
+	colpos.z += rc->dimension.z * 0.5;
+
+	gfc_matrix_make_translation(modelmat, colpos);
+
+	modelmat[0][0] *= rc->dimension.x * 0.5;
+	modelmat[1][1] *= rc->dimension.y * 0.5;
+	modelmat[2][2] *= rc->dimension.z * 0.5;
+	modelmat[3][3] *= 1;
+
+	gf3d_model_draw(rc->colmodel, buffer, command, modelmat);
 }

@@ -14,18 +14,22 @@ typedef struct Entity_S
 	Vector3D position;
 	float rottarget;
 	float rotcurrent;
-	Uint8 distset;
+	float rotheight;
 	Model *model;
 	Matrix4 modelmat;
 
 	Uint8 grounded;
-	float vel;
-	float accel;
-	float velmax;
+	float vel;		//==========================
+	float accel;	//Physics for height changes 
+	float velmax;	//==========================
 
 	Uint8 collisions[6]; //collection of current relevant collisions
 	
 	Rectcol col;
+
+	Uint8 hasthink;
+	void (*think)(void *self);
+	void *thinktarget;
 } Entity;
 
 void entity_manager_init(Uint32 maxEnt);
@@ -39,6 +43,10 @@ void entity_free(Entity *self);
 void entity_draw(Entity *self, Uint32 buffer, VkCommandBuffer command);
 
 void entity_draw_all(Uint32 buffer, VkCommandBuffer command);
+
+void entity_update(Entity *self);
+
+void entity_update_all();
 
 /*
 	@brief checks param entity collider with all other entitites

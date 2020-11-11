@@ -250,7 +250,7 @@ Pipeline *gf3d_pipeline_basic_model_create(VkDevice device,char *vertFile,char *
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
     rasterizer.lineWidth = 1.0f;
 //    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 //    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
@@ -475,7 +475,6 @@ void gf3d_pipeline_create_descriptor_sets(Pipeline *pipe)
             return;
         }
     }
-    pipe->descriptorSetCount = gf3d_pipeline.chainLength;
 }
 
 void gf3d_pipeline_create_basic_model_descriptor_set_layout(Pipeline *pipe)

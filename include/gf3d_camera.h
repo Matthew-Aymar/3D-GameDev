@@ -48,4 +48,6 @@ Vector3D gf3d_camera_get_pos();
 */
 void gf3d_camera_update(Vector3D pos, Vector3D rotation);
 
+float gf3d_camera_get_height();
+
 #endif

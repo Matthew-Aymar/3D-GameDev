@@ -5,6 +5,7 @@
 
 #include "my_entity.h"
 
+
 typedef struct EntityManager_S
 {
 	Entity *entity_list;
@@ -71,6 +72,46 @@ void entity_free(Entity *self)
 
 void entity_draw(Entity *self, Uint32 buffer, VkCommandBuffer command)
 {
+	if (self->model != NULL)
+	{
+		gf3d_model_draw(self->model, buffer, command, self->modelmat);
+	}
+	if (self->col.colmodel != NULL)
+	{
+		collider_draw(&self->col, buffer, command);
+	}
+}
+
+void entity_draw_all(Uint32 buffer, VkCommandBuffer command)
+{
+	int i = 0;
+	for (i = 0; i < entity_manager.entity_max; i++)
+	{
+		if (entity_manager.entity_list[i]._inuse == true)
+		{
+			entity_draw(&entity_manager.entity_list[i], buffer, command);
+		}
+	}
+}
+
+void entity_update(Entity *self)
+{
+	if (self->hasthink)
+	{
+		if (self->thinktarget != NULL)
+			self->think(self->thinktarget);
+		else { self->think(self); }
+	}
+
+	if (self->vel > -1 * self->velmax)
+	{
+		self->vel -= self->accel;
+	}
+	else
+	{
+		self->vel = self->velmax;
+	}
+
 	gfc_matrix_make_translation(self->modelmat, self->position);
 
 	self->col.position.x = self->position.x - (self->col.dimension.x * 0.5);
@@ -82,18 +123,16 @@ void entity_draw(Entity *self, Uint32 buffer, VkCommandBuffer command)
 		self->modelmat,
 		self->rotcurrent,
 		vector3d(0, 0, 1));
-
-	gf3d_model_draw(self->model, buffer, command, self->modelmat);
 }
 
-void entity_draw_all(Uint32 buffer, VkCommandBuffer command)
+void entity_update_all()
 {
 	int i = 0;
 	for (i = 0; i < entity_manager.entity_max; i++)
 	{
 		if (entity_manager.entity_list[i]._inuse == true)
 		{
-			entity_draw(&entity_manager.entity_list[i], buffer, command);
+			entity_update(&entity_manager.entity_list[i]);
 		}
 	}
 }

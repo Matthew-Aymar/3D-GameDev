@@ -68,13 +68,13 @@ void gf3d_camera_update(Vector3D pos, Vector3D rotate)
 	cpos.x = ((-20) * c) - ((-20) * s);
 	cpos.y = ((-20) * s) + ((-20) * c);
 
-	if (gf3d_camera_height > 0 && rotate.y > 0)
+	if (gf3d_camera_height > -10 && rotate.y > 0)
 	{
-		gf3d_camera_height -= rotate.y * 0.05;
+		gf3d_camera_height -= rotate.y;
 	}
-	else if (gf3d_camera_height < 15 && rotate.y < 0)
+	else if (gf3d_camera_height < 25 && rotate.y < 0)
 	{
-		gf3d_camera_height -= rotate.y * 0.05;
+		gf3d_camera_height -= rotate.y ;
 	}
 
 	gf3d_camera_look_at(
@@ -83,6 +83,11 @@ void gf3d_camera_update(Vector3D pos, Vector3D rotate)
 		vector3d(0, 0, 1));
 
 	gf3d_vgraphics_setubo(gf3d_camera);
+}
+
+float gf3d_camera_get_height()
+{
+	return gf3d_camera_height;
 }
 
 /*eol@eof*/
