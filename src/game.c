@@ -1,4 +1,5 @@
 #include <SDL.h>            
+#include <enet.h>
 
 #include "my_entity.h"
 #include "my_player.h"
@@ -189,6 +190,38 @@ void interactable_set(Entity *i_conv, Entity *i_jump, Entity *i_spik, Entity *i_
 	p->t2.z += 5;
 }
 
+void enet_start_client(ENetAddress *a, ENetPeer *p, ENetHost *h, ENetEvent *e, Uint8 *connect)
+{
+	enet_address_set_host(a, "69.119.6.205");
+	a->port = 9191;
+
+	p = enet_host_connect(h, a, 1, 0);
+	if (p == NULL)
+	{
+		slog("No available peers");
+		connect = false;
+	}
+	else
+	{
+		if (enet_host_service(h, e, 5000) > 0 && e->type == ENET_EVENT_TYPE_CONNECT)
+		{
+			slog("Connected to 69.119.6.205:9191");
+			connect = true;
+		}
+		else
+		{
+			slog("Connection to 69.119.6.205:9191 failed");
+			enet_peer_reset(p);
+			connect = false;
+		}
+	}
+}
+
+void enet_start_server()
+{
+
+}
+
 int main(int argc, char *argv[])
 {
 	int done = 0;
@@ -222,6 +255,15 @@ int main(int argc, char *argv[])
 
 	Entity *ground_cols[22];
 
+	Uint8 enetinit = true;
+	Uint8 isserver = false;
+	Uint8 connected = false;
+
+	ENetHost* host = NULL;
+	ENetAddress address;
+	ENetEvent event;
+	ENetPeer* peer = NULL;
+	
 	for (a = 1; a < argc; a++)
 	{
 		if (strcmp(argv[a], "-disable_validate") == 0)
@@ -244,6 +286,11 @@ int main(int argc, char *argv[])
 	player_manager_init(16);
 	attack_init();
 	class_init();
+	if (enet_initialize() != 0)
+	{
+		slog("error initializing enet");
+		enetinit = false;
+	}
 	slog_sync();
 	
 	collider_set_draw(true);
@@ -260,6 +307,7 @@ int main(int argc, char *argv[])
 	ground->model = gf3d_model_load("Map");
 
 	ground->position = vector3d(0, 0, -10);
+
 	// main game loop
 	slog("gf3d main loop begin");
 	slog_sync();
@@ -271,7 +319,62 @@ int main(int argc, char *argv[])
 	gf3d_camera_set(gf3d_vgraphics_get_uniform_buffer_object().view);
 
 	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 10), Kinematic);
-	
+
+	//ENET
+	if (enetinit)
+	{
+		if (!isserver)
+		{
+			//CLIENT SETUP
+			enet_address_set_host(&address, "69.119.6.205");
+			address.port = 9191;
+
+			host = enet_host_create(NULL, 1, 1, 0, 0);
+			if (host == NULL)
+			{
+				slog("Error creating client");
+			}
+
+			peer = enet_host_connect(host, &address, 1, 0);
+			if (peer == NULL)
+			{
+				slog("No available peers");
+				connected = false;
+			}
+			else
+			{
+				if (enet_host_service(host, &event, 5000) > 0 
+					&& event.type == ENET_EVENT_TYPE_CONNECT)
+				{
+					slog("Connected to 69.119.6.205:9191");
+					connected = true;
+				}
+				else
+				{
+					slog("Connection to 69.119.6.205:9191 failed");
+					enet_peer_reset(peer);
+					connected = false;
+				}
+			}
+		}
+		else
+		{
+			//SERVER SETUP
+			address.host = ENET_HOST_ANY;
+			address.port = 9191;
+
+			host = enet_host_create(&address, 8, 1, 0, 0); //8 connections maximum, 1 channel, no bandwith limits
+			if (host == NULL)
+			{
+				slog("Error creating server");
+				connected = false;
+			}
+		}
+
+		atexit(enet_deinitialize);
+	}
+	//ENET
+
 	while (!done)
 	{
 		SDL_PumpEvents();   // update SDL's internal event structures
@@ -393,6 +496,48 @@ int main(int argc, char *argv[])
 
 		gf3d_vgraphics_render_end(bufferFrame);
 
+		//ENET
+		if (connected)
+		{
+			if (isserver)
+			{
+				//Server update
+				while (enet_host_service(host, &event, 0) > 0)
+				{
+					if (event.type == ENET_EVENT_TYPE_CONNECT)
+					{
+						slog("A new client connected from %x:%u",
+							event.peer->address.host,
+							event.peer->address.port);
+					}
+					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
+					{
+						//manage packet
+					}
+					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
+					{
+						slog("Client %x:%u has disconnected",
+							event.peer->address.host,
+							event.peer->address.port);
+						//Set data to NULL
+					}
+				}
+			}
+			else
+			{
+				//Client update
+				while (enet_host_service(host, &event, 0) > 0)
+				{
+					if (event.type == ENET_EVENT_TYPE_RECEIVE)
+					{
+						//manage packet
+					}
+				}
+			}
+
+		}
+		//ENET
+
 		/*frames++;
 		if (time(0) - last_second >= 1)
 		{
@@ -406,6 +551,12 @@ int main(int argc, char *argv[])
 
 	vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());
 	//cleanup
+
+	entity_manager_close();
+	player_manager_close();
+
+	enet_host_destroy(host);
+
 	slog("gf3d program end");
 	slog_sync();
 	return 0;

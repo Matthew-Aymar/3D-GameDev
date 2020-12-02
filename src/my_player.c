@@ -17,7 +17,7 @@ void player_manager_close()
 	{
 		free(player_manager.players);
 	}
-	memset(&player_manager, 0, sizeof(Player));
+	memset(&player_manager, 0, sizeof(PlayerManager));
 }
 
 void player_manager_init(Uint8 Max)
