@@ -263,7 +263,11 @@ int main(int argc, char *argv[])
 	ENetAddress address;
 	ENetEvent event;
 	ENetPeer* peer = NULL;
-	
+	ENetPacket* pack = NULL;
+
+	const Vector3D* send = NULL;
+	const Vector3D* recieve = NULL;
+
 	for (a = 1; a < argc; a++)
 	{
 		if (strcmp(argv[a], "-disable_validate") == 0)
@@ -369,6 +373,10 @@ int main(int argc, char *argv[])
 				slog("Error creating server");
 				connected = false;
 			}
+			else
+			{
+				connected = true;
+			}
 		}
 
 		atexit(enet_deinitialize);
@@ -377,6 +385,64 @@ int main(int argc, char *argv[])
 
 	while (!done)
 	{
+		//ENET
+		if (connected && !isserver)
+		{
+			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+			enet_peer_send(peer, 1, pack);
+		}
+		else if (connected && isserver)
+		{
+			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+			if (peer != NULL)
+			{
+				enet_peer_send(peer, 1, pack);
+			}
+		}
+
+		if (connected)
+		{
+			if (isserver)
+			{
+				//Server update
+				while (enet_host_service(host, &event, 0) > 0)
+				{
+					if (event.type == ENET_EVENT_TYPE_CONNECT)
+					{
+						slog("A new client connected from %x:%u",
+							event.peer->address.host,
+							event.peer->address.port);
+					}
+					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
+					{
+						recieve = event.packet->data;
+						slog("%f, %f, %f", recieve->x, recieve->y, recieve->z);
+					}
+					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
+					{
+						slog("Client %x:%u has disconnected",
+							event.peer->address.host,
+							event.peer->address.port);
+						//Set data to NULL
+					}
+				}
+			}
+			else
+			{
+				//Client update
+				while (enet_host_service(host, &event, 0) > 0)
+				{
+					if (event.type == ENET_EVENT_TYPE_RECEIVE)
+					{
+						recieve = event.packet->data;
+						slog("%f, %f, %f", recieve->x, recieve->y, recieve->z);
+					}
+				}
+			}
+
+		}
+		//ENET
+
 		SDL_PumpEvents();   // update SDL's internal event structures
 		keys = SDL_GetKeyboardState(NULL); // get the keyboard state for this frame
 		SDL_GetRelativeMouseState(&mousex, &mousey);
@@ -496,48 +562,6 @@ int main(int argc, char *argv[])
 
 		gf3d_vgraphics_render_end(bufferFrame);
 
-		//ENET
-		if (connected)
-		{
-			if (isserver)
-			{
-				//Server update
-				while (enet_host_service(host, &event, 0) > 0)
-				{
-					if (event.type == ENET_EVENT_TYPE_CONNECT)
-					{
-						slog("A new client connected from %x:%u",
-							event.peer->address.host,
-							event.peer->address.port);
-					}
-					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
-					{
-						//manage packet
-					}
-					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
-					{
-						slog("Client %x:%u has disconnected",
-							event.peer->address.host,
-							event.peer->address.port);
-						//Set data to NULL
-					}
-				}
-			}
-			else
-			{
-				//Client update
-				while (enet_host_service(host, &event, 0) > 0)
-				{
-					if (event.type == ENET_EVENT_TYPE_RECEIVE)
-					{
-						//manage packet
-					}
-				}
-			}
-
-		}
-		//ENET
-
 		/*frames++;
 		if (time(0) - last_second >= 1)
 		{
@@ -547,6 +571,12 @@ int main(int argc, char *argv[])
 		}*/
 
 		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
+
+		//ENET
+
+		send = &p->ent->position;
+
+		//ENET
 	}
 
 	vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());
