@@ -264,6 +264,7 @@ int main(int argc, char *argv[])
 	ENetEvent event;
 	ENetPeer* peer = NULL;
 	ENetPacket* pack = NULL;
+	ENetPacket* recieved = NULL;
 
 	Vector3D sendpos = vector3d(0, 0, 0);
 	const Vector3D* send = &sendpos;
@@ -414,7 +415,7 @@ int main(int argc, char *argv[])
 							recievepos.z,
 							event.channelID);
 
-						pack = enet_packet_create(send, sizeof(send), ENET_PACKET_FLAG_RELIABLE);
+						pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(event.peer, 0, pack);
 					}
 					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
@@ -580,13 +581,13 @@ int main(int argc, char *argv[])
 		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
 
 		//ENET
-		sendpos.x = p->ent->position.x;
-		sendpos.y = p->ent->position.y;
-		sendpos.z = p->ent->position.z;
-
+		//sendpos.x = p->ent->position.x;
+		//sendpos.y = p->ent->position.y;
+		//sendpos.z = p->ent->position.z;
+		//slog("%f, %f, %f", sendpos.x, sendpos.y, sendpos.z);
 		if (connected && !isserver)
 		{
-			pack = enet_packet_create(send, sizeof(send), ENET_PACKET_FLAG_RELIABLE);
+			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
 			enet_peer_send(peer, 0, pack);
 		}
 		//ENET
