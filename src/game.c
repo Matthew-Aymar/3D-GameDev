@@ -265,8 +265,10 @@ int main(int argc, char *argv[])
 	ENetPeer* peer = NULL;
 	ENetPacket* pack = NULL;
 
-	const char* send = "hi";
-	const char* recieve = "bye";
+	Vector3D sendpos = vector3d(0, 0, 0);
+	const Vector3D* send = &sendpos;
+	Vector3D recievepos = vector3d(0, 0, 0);
+	const Vector3D* recieve = &recievepos;
 
 	for (a = 1; a < argc; a++)
 	{
@@ -401,12 +403,18 @@ int main(int argc, char *argv[])
 					}
 					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
 					{
-						slog("A packet of length %u containing %s was received from client on channel %u.\n",
+						recieve = event.packet->data;
+						recievepos.x = recieve->x;
+						recievepos.y = recieve->y;
+						recievepos.z = recieve->z;
+						slog("A packet of length %u containing %f,%f,%f was received from client on channel %u.\n",
 							event.packet->dataLength,
-							event.packet->data,
+							recievepos.x,
+							recievepos.y,
+							recievepos.z,
 							event.channelID);
 
-						pack = enet_packet_create(recieve, sizeof(recieve), ENET_PACKET_FLAG_RELIABLE);
+						pack = enet_packet_create(send, sizeof(send), ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(event.peer, 0, pack);
 					}
 					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
@@ -425,10 +433,15 @@ int main(int argc, char *argv[])
 				{
 					if (event.type == ENET_EVENT_TYPE_RECEIVE)
 					{
-						slog("A packet of length %u containing %s was received from %s on channel %u.\n",
+						recieve = event.packet->data;
+						recievepos.x = recieve->x;
+						recievepos.y = recieve->y;
+						recievepos.z = recieve->z;
+						slog("A packet of length %u containing %f,%f,%f was received from client on channel %u.\n",
 							event.packet->dataLength,
-							event.packet->data,
-							event.peer->data,
+							recievepos.x,
+							recievepos.y,
+							recievepos.z,
 							event.channelID);
 					}
 				}
@@ -567,7 +580,9 @@ int main(int argc, char *argv[])
 		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
 
 		//ENET
-		//send = &p->ent->position;
+		sendpos.x = p->ent->position.x;
+		sendpos.y = p->ent->position.y;
+		sendpos.z = p->ent->position.z;
 
 		if (connected && !isserver)
 		{
