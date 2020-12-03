@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 	Entity *ground_cols[22];
 
 	Uint8 enetinit = true;
-	Uint8 isserver = false;
+	Uint8 isserver = true;
 	Uint8 connected = false;
 
 	ENetHost* host = NULL;
@@ -386,20 +386,6 @@ int main(int argc, char *argv[])
 	while (!done)
 	{
 		//ENET
-		if (connected && !isserver)
-		{
-			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-			enet_peer_send(peer, 1, pack);
-		}
-		else if (connected && isserver)
-		{
-			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-			if (peer != NULL)
-			{
-				enet_peer_send(peer, 1, pack);
-			}
-		}
-
 		if (connected)
 		{
 			if (isserver)
@@ -415,8 +401,11 @@ int main(int argc, char *argv[])
 					}
 					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
 					{
-						recieve = event.packet->data;
-						slog("%f, %f, %f", recieve->x, recieve->y, recieve->z);
+						slog("A packet of length %u containing %s was received from %s on channel %u.\n",
+							event.packet->dataLength,
+							event.packet->data,
+							event.peer->data,
+							event.channelID);
 					}
 					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
 					{
@@ -434,8 +423,11 @@ int main(int argc, char *argv[])
 				{
 					if (event.type == ENET_EVENT_TYPE_RECEIVE)
 					{
-						recieve = event.packet->data;
-						slog("%f, %f, %f", recieve->x, recieve->y, recieve->z);
+						slog("A packet of length %u containing %s was received from %s on channel %u.\n",
+							event.packet->dataLength,
+							event.packet->data,
+							event.peer->data,
+							event.channelID);
 					}
 				}
 			}
@@ -573,8 +565,21 @@ int main(int argc, char *argv[])
 		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
 
 		//ENET
-
 		send = &p->ent->position;
+
+		if (connected && !isserver)
+		{
+			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+			enet_peer_send(peer, 0, pack);
+		}
+		else if (connected && isserver)
+		{
+			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+			if (peer != NULL)
+			{
+				slog("%d", enet_peer_send(peer, 0, pack));
+			}
+		}
 
 		//ENET
 	}
