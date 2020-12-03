@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 	Entity *ground_cols[22];
 
 	Uint8 enetinit = true;
-	Uint8 isserver = true;
+	Uint8 isserver = false;
 	Uint8 connected = false;
 
 	ENetHost* host = NULL;
