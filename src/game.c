@@ -265,8 +265,8 @@ int main(int argc, char *argv[])
 	ENetPeer* peer = NULL;
 	ENetPacket* pack = NULL;
 
-	const Vector3D* send = NULL;
-	const Vector3D* recieve = NULL;
+	const char* send = "hi";
+	const char* recieve = "bye";
 
 	for (a = 1; a < argc; a++)
 	{
@@ -401,14 +401,13 @@ int main(int argc, char *argv[])
 					}
 					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
 					{
-						slog("A packet of length %u containing %s was received from %s on channel %u.\n",
+						slog("A packet of length %u containing %s was received from client on channel %u.\n",
 							event.packet->dataLength,
 							event.packet->data,
-							event.peer->data,
 							event.channelID);
 
-						pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-						slog("%d", enet_peer_send(peer, 0, pack));
+						pack = enet_packet_create(recieve, sizeof(recieve), ENET_PACKET_FLAG_RELIABLE);
+						enet_peer_send(peer, 0, pack);
 					}
 					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
 					{
@@ -572,9 +571,8 @@ int main(int argc, char *argv[])
 
 		if (connected && !isserver)
 		{
-			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+			pack = enet_packet_create(send, sizeof(send), ENET_PACKET_FLAG_RELIABLE);
 			enet_peer_send(peer, 0, pack);
-			slog("send");
 		}
 		//ENET
 	}
