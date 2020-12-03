@@ -406,6 +406,9 @@ int main(int argc, char *argv[])
 							event.packet->data,
 							event.peer->data,
 							event.channelID);
+
+						pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+						slog("%d", enet_peer_send(peer, 0, pack));
 					}
 					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
 					{
@@ -571,16 +574,8 @@ int main(int argc, char *argv[])
 		{
 			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
 			enet_peer_send(peer, 0, pack);
+			slog("send");
 		}
-		else if (connected && isserver)
-		{
-			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-			if (peer != NULL)
-			{
-				slog("%d", enet_peer_send(peer, 0, pack));
-			}
-		}
-
 		//ENET
 	}
 
