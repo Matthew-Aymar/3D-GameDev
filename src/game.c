@@ -249,6 +249,8 @@ int main(int argc, char *argv[])
 
 	Entity *i_conv, *i_jump, *i_spik, *i_spin, *i_tele1, *i_tele2;
 
+	Entity *temp_player;
+
 	Player *p;
 
 	SDL_Window *w;
@@ -314,6 +316,9 @@ int main(int argc, char *argv[])
 	ground->model = gf3d_model_load("Map");
 
 	ground->position = vector3d(0, 0, -10);
+
+	temp_player = entity_new();
+	temp_player->model = gf3d_model_load("dino");
 
 	// main game loop
 	slog("gf3d main loop begin");
@@ -408,12 +413,10 @@ int main(int argc, char *argv[])
 						recievepos.x = recieve->x;
 						recievepos.y = recieve->y;
 						recievepos.z = recieve->z;
-						slog("A packet of length %u containing %f,%f,%f was received from client on channel %u.\n",
-							event.packet->dataLength,
-							recievepos.x,
-							recievepos.y,
-							recievepos.z,
-							event.channelID);
+						
+						temp_player->position.x = recievepos.x;
+						temp_player->position.y = recievepos.y;
+						temp_player->position.z = recievepos.z;
 
 						pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(event.peer, 0, pack);
@@ -438,12 +441,10 @@ int main(int argc, char *argv[])
 						recievepos.x = recieve->x;
 						recievepos.y = recieve->y;
 						recievepos.z = recieve->z;
-						slog("A packet of length %u containing %f,%f,%f was received from client on channel %u.\n",
-							event.packet->dataLength,
-							recievepos.x,
-							recievepos.y,
-							recievepos.z,
-							event.channelID);
+						
+						temp_player->position.x = recievepos.x;
+						temp_player->position.y = recievepos.y;
+						temp_player->position.z = recievepos.z;
 					}
 				}
 			}
@@ -581,10 +582,10 @@ int main(int argc, char *argv[])
 		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
 
 		//ENET
-		//sendpos.x = p->ent->position.x;
-		//sendpos.y = p->ent->position.y;
-		//sendpos.z = p->ent->position.z;
-		//slog("%f, %f, %f", sendpos.x, sendpos.y, sendpos.z);
+		sendpos.x = p->ent->position.x;
+		sendpos.y = p->ent->position.y;
+		sendpos.z = p->ent->position.z;
+
 		if (connected && !isserver)
 		{
 			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
