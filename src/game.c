@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
 							event.channelID);
 
 						pack = enet_packet_create(recieve, sizeof(recieve), ENET_PACKET_FLAG_RELIABLE);
-						enet_peer_send(peer, 0, pack);
+						enet_peer_send(event.peer, 0, pack);
 					}
 					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
 					{
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
 
 		//ENET
-		send = &p->ent->position;
+		//send = &p->ent->position;
 
 		if (connected && !isserver)
 		{
