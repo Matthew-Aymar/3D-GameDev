@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 	Entity *ground_cols[22];
 
 	Uint8 enetinit = true;
-	Uint8 isserver = false;
+	Uint8 isserver = true;
 	Uint8 connected = false;
 
 	ENetHost* hostptr = NULL;
@@ -268,7 +268,11 @@ int main(int argc, char *argv[])
 
 	Bot bot;
 
-	Item item;
+	Item item0;
+	Item item1;
+	Item item2;
+	Item item3;
+	Item item4;
 
 	Sound *bgtrack;
 
@@ -321,7 +325,11 @@ int main(int argc, char *argv[])
 	cube = entity_new();
 	cube->model = gf3d_model_load("cube2");
 
-	item_new(&item, 0);
+	item_new(&item0, 0);
+	item_new(&item1, 1);
+	item_new(&item2, 2);
+	item_new(&item3, 3);
+	item_new(&item4, 4);
 
 	start = gf3d_sprite_load("images/start.png", -1, -1, 0);
 	edit = gf3d_sprite_load("images/edit.png", -1, -1, 0);
@@ -332,26 +340,6 @@ int main(int argc, char *argv[])
 	button_new(&start_button, start, vector2d(600, 400));
 	button_new(&edit_button, edit, vector2d(600, 500));
 	button_new(&exit_button, exit, vector2d(600, 600));
-
-	/*cfg = fopen("config.txt", "r");
-	if (cfg)
-	{
-		fgets(&cfgcontents, 60, cfg);
-		strcpy(&ipaddr, &cfgcontents);
-		fgets(&cfgcontents, 60, cfg);
-		strcpy(&portstr, &cfgcontents);
-		portint = atoi(&portstr);
-		fgets(&cfgcontents, 60, cfg);
-		strcpy(&serverbool, &cfgcontents);
-		isserver = atoi(&serverbool);
-		fclose(cfg);
-	}
-	else
-	{
-		connected = false;
-		enetinit = false;
-		slog("no enet config file!");
-	}*/
 
 	// main game loop
 	slog("gf3d main loop begin");
@@ -365,7 +353,7 @@ int main(int argc, char *argv[])
 	gf3d_camera_set(gf3d_vgraphics_get_uniform_buffer_object().view);
 
 	bgtrack = gfc_sound_load("sounds/Zone.wav", 0.02, -1);
-	//gfc_sound_play(bgtrack, 100, 0.02, -1, -1);
+	gfc_sound_play(bgtrack, 100, 0.02, -1, -1);
 
 	while (!done)
 	{
@@ -674,7 +662,11 @@ int main(int argc, char *argv[])
 
 				bot_update(&bot);
 				entity_update_all();
-				item_update(&item, p);
+				item_update(&item0, p);
+				item_update(&item1, p);
+				item_update(&item2, p);
+				item_update(&item3, p);
+				item_update(&item4, p);
 
 				gfc_matrix_rotate(
 					ground->modelmat,
@@ -724,8 +716,12 @@ int main(int argc, char *argv[])
 			commandBuffer = gf3d_command_rendering_begin(bufferFrame, gf3d_vgraphics_get_graphics_model_pipeline());
 
 			entity_draw_all(bufferFrame, commandBuffer);
-			item_draw(&item, bufferFrame, commandBuffer);
-
+			item_draw(&item0, bufferFrame, commandBuffer);
+			item_draw(&item1, bufferFrame, commandBuffer);
+			item_draw(&item2, bufferFrame, commandBuffer);
+			item_draw(&item3, bufferFrame, commandBuffer);
+			item_draw(&item4, bufferFrame, commandBuffer);
+		
 			if (!p->ent->_dead)
 				player_draw_attack(bufferFrame, commandBuffer, p->_playernum);
 
@@ -752,17 +748,6 @@ int main(int argc, char *argv[])
 			gf3d_command_rendering_end(commandBuffer);
 
 			gf3d_vgraphics_render_end(bufferFrame);
-
-			/*
-			frames++;
-			if (time(0) - last_second >= 1)
-			{
-			slog("%f", frames);
-			frames = 0;
-			last_second = time(0);
-			}
-			*/
-			
 
 			//ENET
 			sendpos.x = p->ent->position.x;
