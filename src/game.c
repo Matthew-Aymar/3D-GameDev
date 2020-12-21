@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 			//ENET
 			if (connected)
 			{
-				multiplayer_host_service(isserver, host, event);
+				multiplayer_host_service(isserver, host, event, &bot.ent->position, send);
 			}
 			//ENET
 

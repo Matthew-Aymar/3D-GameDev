@@ -23,6 +23,6 @@ Uint8 multiplayer_client_create(ENetAddress *addr, ENetHost **host, ENetPeer **p
 /*
 	@brief updates the host based on whether it is a client or server. Manages events recieved.
 */
-void multiplayer_host_service(Uint8 isserver, ENetHost **host, ENetEvent *eve);
+void multiplayer_host_service(Uint8 isserver, ENetHost **host, ENetEvent *eve, Vector3D *recieve, Vector3D *send);
 
 #endif

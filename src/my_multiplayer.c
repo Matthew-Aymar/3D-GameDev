@@ -65,8 +65,10 @@ Uint8 multiplayer_client_create(ENetAddress *addr, ENetHost **host, ENetPeer **p
 	}
 }
 
-void multiplayer_host_service(Uint8 isserver, ENetHost **host, ENetEvent *eve)
+void multiplayer_host_service(Uint8 isserver, ENetHost **host, ENetEvent *eve, Vector3D *recieve, Vector3D *send)
 {
+	Vector3D *temprecieve;
+	ENetPacket *pack;
 	if (isserver)
 	{
 		while (enet_host_service(*host, eve, 0) > 0)
@@ -79,17 +81,13 @@ void multiplayer_host_service(Uint8 isserver, ENetHost **host, ENetEvent *eve)
 			}
 			else if (eve->type == ENET_EVENT_TYPE_RECEIVE)
 			{
-				//recieve = event.packet->data;
-				//recievepos.x = recieve->x;
-				//recievepos.y = recieve->y;
-				//recievepos.z = recieve->z;
+				temprecieve = eve->packet->data;
+				recieve->x = temprecieve->x;
+				recieve->y = temprecieve->y;
+				recieve->z = temprecieve->z;
 
-				//temp_player->position.x = recievepos.x;
-				//temp_player->position.y = recievepos.y;
-				//temp_player->position.z = recievepos.z;
-
-				//pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-				//enet_peer_send(event.peer, 0, pack);
+				pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+				enet_peer_send(eve->peer, 0, pack);
 			}
 			else if (eve->type == ENET_EVENT_TYPE_DISCONNECT)
 			{
@@ -106,14 +104,10 @@ void multiplayer_host_service(Uint8 isserver, ENetHost **host, ENetEvent *eve)
 		{
 			if (eve->type == ENET_EVENT_TYPE_RECEIVE)
 			{
-				//recieve = event.packet->data;
-				//recievepos.x = recieve->x;
-				//recievepos.y = recieve->y;
-				//recievepos.z = recieve->z;
-
-				//temp_player->position.x = recievepos.x;
-				//temp_player->position.y = recievepos.y;
-				//temp_player->position.z = recievepos.z;
+				temprecieve = eve->packet->data;
+				recieve->x = temprecieve->x;
+				recieve->y = temprecieve->y;
+				recieve->z = temprecieve->z;
 			}
 		}
 	}
