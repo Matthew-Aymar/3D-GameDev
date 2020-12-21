@@ -23,12 +23,21 @@ typedef struct Player_s
 	Projectile weapon;
 	Vector3D forward;
 	Uint8 throwcd;		//frames to wait before checking for collision
+	Uint8 attackcd;		//frames the player has to wait before attacking
+	float stamina;
+	float stamina_max;
+	Uint8 blocking;
 
 	float jumpboost;
 	Uint8 hasspun;
 	Vector3D t1;
 	Vector3D t2;
 	Uint8 telecd;
+
+	int health;
+	int max_health;
+	Uint8 stim, sped, atks, fire;
+	Uint8 iframes;
 }Player;
 
 void player_manager_init(Uint8 Max);

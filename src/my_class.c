@@ -49,6 +49,7 @@ Rectcol* class_get_hit(Uint8 attack_frame, Uint8 attack, Uint8 type)
 
 Uint8 class_get_frames(Uint8 attack)
 {
+	//UHHHHHHHHHH
 	if (attack == 0)
 		return Stinger.attacks->light1->frames;
 	else if (attack == 1)
@@ -65,4 +66,35 @@ float class_get_throw(Uint8 type)
 		return Exe.throwspeed;
 	else if (type == 2)
 		return Shin.throwspeed;
+}
+
+Uint8 class_get_damage(Uint8 attack, Uint8 type)
+{
+	if (type == 0)
+	{
+		if (attack == 0)
+			return Stinger.attacks->light1->damage;
+		else if (attack == 1)
+			return Stinger.attacks->light2->damage;
+		else if (attack == 2)
+			return Stinger.attacks->heavy->damage;
+	}
+	else if (type == 1)
+	{
+		if (attack == 0)
+			return Exe.attacks->light1->damage;
+		else if (attack == 1)
+			return Exe.attacks->light2->damage;
+		else if (attack == 2)
+			return Exe.attacks->heavy->damage;
+	}
+	else if (type == 2)
+	{
+		if (attack == 0)
+			return Shin.attacks->light1->damage;
+		else if (attack == 1)
+			return Shin.attacks->light2->damage;
+		else if (attack == 2)
+			return Shin.attacks->heavy->damage;
+	}
 }

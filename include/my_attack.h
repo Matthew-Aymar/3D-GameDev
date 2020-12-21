@@ -8,6 +8,7 @@ typedef struct Attack_S
 	float speed;
 	Rectcol *hits; //collection of hitboxes to follow the motion of the attack
 	Uint8 frames; //how many frames the hitboxes should be active for
+	Uint8 damage;
 } Attack;
 
 typedef struct Moveset_S

@@ -48,6 +48,9 @@ Player *player_new(Uint8 id)
 			player_manager.players[i].ent = entity_new();
 			player_manager.players[i].armed = true;
 			player_manager.players[i].ent->position = vector3d(0, 0, 5);
+			player_manager.players[i].stamina_max = 100;
+			player_manager.players[i].max_health = 100;
+			player_manager.players[i].health = 100;
 			return &player_manager.players[i];
 		}
 	}
@@ -78,17 +81,21 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 	float up;
 	Player *p = player_get_by_num(num);
 	Uint8 xcol = false, ycol = false;
+	float speed = 0.2;
+
+	if (p->sped)
+		speed *= 2;
 
 	if (!p->attacking)
 	{
 		//take mouse x input and use it to rotate the model
 		vector3d_normalize(&move);
-		p->ent->rottarget += -mousex * 0.01;
+		p->ent->rottarget = -mousex * 0.01;
 		p->ent->rotcurrent += p->ent->rottarget;
 		p->ent->rotcurrent = SDL_fmodf(p->ent->rotcurrent, 6.28319);
 		//mouse smoothing
-		if (p->ent->rottarget != 0)
-			p->ent->rottarget *= 0.8;
+		/*if (p->ent->rottarget != 0)
+			p->ent->rottarget *= 0.8;*/
 
 		p->ent->rotheight += -mousey * 0.025;
 
@@ -122,10 +129,19 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		}
 		else { p->jumpboost = 1; }
 		
-		if (entity_get_col_by_type(p->ent, Spik))
+		if (entity_get_col_by_type(p->ent, Spik) && p->iframes <= 0)
 		{
-			p->ent->_dead = true;
-			p->respawn = 100;
+			p->health -= 25;
+			p->iframes = 100;
+			if (p->health <= 0)
+			{
+				p->ent->_dead = true;
+				p->respawn = 100;
+			}
+		}
+		else if (p->iframes > 0)
+		{
+			p->iframes--;
 		}
 
 		else if (entity_get_col_by_type(p->ent, Spin))
@@ -181,7 +197,7 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		}
 
 		//move collider to new x position
-		p->ent->col.position.x -= forward.x * 0.2;
+		p->ent->col.position.x -= forward.x * speed;
 
 		//Check for a collision
 		entity_check_col(p->ent);
@@ -190,11 +206,11 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		{
 			xcol = true;
 			//revert
-			p->ent->col.position.x += forward.x * 0.2;
+			p->ent->col.position.x += forward.x * speed;
 		}
 
 		//move collider to new y position
-		p->ent->col.position.y -= forward.y * 0.2;
+		p->ent->col.position.y -= forward.y * speed;
 
 		//Check for collision
 		entity_check_col(p->ent);
@@ -203,17 +219,17 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		{
 			//revert
 			ycol = true;
-			p->ent->col.position.y += forward.y * 0.2;
+			p->ent->col.position.y += forward.y * speed;
 		}
 
 		//Commit movements to the player entity if no collision
 		if (!xcol)
 		{
-			p->ent->position.x -= forward.x * 0.2;
+			p->ent->position.x -= forward.x * speed;
 		}
 		if (!ycol)
 		{
-			p->ent->position.y -= forward.y * 0.2;
+			p->ent->position.y -= forward.y * speed;
 		}
 
 		p->ent->position.z += up;
@@ -256,6 +272,17 @@ void player_move(Uint8 *input, Uint8 num, int mousex, int mousey)
 		}
 	}
 	else { p->throwcd--; }
+
+	if (p->stamina < p->stamina_max && !p->blocking)
+	{
+		p->stamina += 0.2;
+		if (p->stim)
+			p->stamina += 0.2;
+	}
+	else if (p->stamina > 0 && p->blocking)
+	{
+		p->stamina--;
+	}
 }
 
 void player_update_camera(Vector3D move, Vector3D rotate)
@@ -270,23 +297,16 @@ void player_update_attack(Uint8 input, Uint8 num)
 	Vector3D pos, dim;
 	Uint8 last_attack;
 
-	/*pos = vector3d(-10, -15, 0);
-	vector3d_rotate_about_z(&pos, p->ent->rotcurrent * GFC_RADTODEG);
-
-	pos.x += p->ent->position.x;
-	pos.y += p->ent->position.y;
-	pos.z += p->ent->position.z;
-
-	collider_new(&p->attack_hits[0], pos, vector3d(p->attack_frame * 0.01, p->attack_frame * 0.01, p->attack_frame * 0.01), Kinematic);
-
-	p->attack_frame++;*/
-
 	if (p->attack == 0)
 		last_attack = 1;
 	else { last_attack = 0; }
 
-	if (input)
+	if (input && p->attackcd <= 0 && p->stamina > 0)
 	{
+		p->attackcd = 45;
+		if (p->atks > 0)
+			p->attackcd *= 0.5;
+		p->stamina -= 25;
 		if (input == 1)
 		{
 			if (p->attack_frame >= class_get_frames(last_attack) || (p->attack == 0 && p->attack_frame == 0))
@@ -355,6 +375,18 @@ void player_update_attack(Uint8 input, Uint8 num)
 			p->attacking = false;
 		}
 	}
+
+	if (p->attackcd > 0)
+		p->attackcd--;
+
+	if (p->stim > 0)
+		p->stim--;
+	if (p->sped > 0)
+		p->sped--;
+	if (p->atks > 0)
+		p->atks--;
+	if (p->fire > 0)
+		p->fire--;
 }
 
 void player_draw_attack(Uint32 buffer, VkCommandBuffer command, Uint8 num)
@@ -364,16 +396,24 @@ void player_draw_attack(Uint32 buffer, VkCommandBuffer command, Uint8 num)
 
 	for (x = 0; x < 3; x++)
 	{
+		p->attack_hits[x].colmodel = gf3d_model_load("cube2");
 		collider_draw(&p->attack_hits[x], buffer, command);
+		gf3d_model_free(p->attack_hits[x].colmodel);
 	}
 }
 
 void player_throw_weapon(Uint8 num)
 {
 	Player *p = player_get_by_num(num);
-
+	Vector3D dir;
 	if (p->attacking)
 		return;
+
+	dir.x = p->forward.x;
+	dir.y = p->forward.y;
+	dir.z = gf3d_camera_get_pos().z - p->ent->position.z;
+
+	vector3d_normalize(&dir);
 
 	p->armed = false;
 	projectile_new(&p->weapon, p->ent->position, p->forward, class_get_throw(p->class_type));
@@ -383,4 +423,5 @@ void player_respawn(Player *p)
 {
 	p->ent->position = vector3d(0, 0, 5);
 	p->ent->_dead = false;
+	p->health = p->max_health;
 }

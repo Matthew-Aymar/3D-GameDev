@@ -30,4 +30,6 @@ Uint8 class_get_frames(Uint8 attack);
 
 float class_get_throw(Uint8 type);
 
+Uint8 class_get_damage(Uint8 attack, Uint8 type);
+
 #endif

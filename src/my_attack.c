@@ -1,4 +1,5 @@
 #include "my_attack.h"
+#include "simple_logger.h"
 
 Attack stinger_l1;
 Attack stinger_l2;
@@ -17,6 +18,8 @@ Moveset shin;
 
 void attack_init()
 {
+	int x = 0;
+	stinger_l1.damage = 15;
 	stinger_l1.speed = 1;
 	stinger_l1.frames = 15;
 	stinger_l1.hits = (Rectcol*)gfc_allocate_array(sizeof(Rectcol), stinger_l1.frames);
@@ -37,6 +40,7 @@ void attack_init()
 	collider_new(&stinger_l1.hits[13], vector3d(-1.3, -5.5, 6), vector3d(2, 2, 2), Kinematic);
 	collider_new(&stinger_l1.hits[14], vector3d(-1.5, -5, 7), vector3d(2, 2, 2), Kinematic);
 
+	stinger_l2.damage = 15;
 	stinger_l2.speed = 1;
 	stinger_l2.frames = 15;
 	stinger_l2.hits = (Rectcol*)gfc_allocate_array(sizeof(Rectcol), stinger_l2.frames);
@@ -65,6 +69,7 @@ void attack_init()
 	stinger.light2 = &stinger_l2;
 	stinger.heavy = &stinger_h;
 
+	exe_l1.damage = 10;
 	exe_l1.speed = 1;
 	exe_l1.frames = 15;
 	exe_l1.hits = (Rectcol*)gfc_allocate_array(sizeof(Rectcol), exe_l1.frames);
@@ -85,6 +90,7 @@ void attack_init()
 	collider_new(&exe_l1.hits[13], vector3d(-8, -7, 0.5), vector3d(3, 3, 2), Kinematic);
 	collider_new(&exe_l1.hits[14], vector3d(-9, -5, 0.45), vector3d(3, 3, 2), Kinematic);
 
+	exe_l2.damage = 40;
 	exe_l2.speed = 1;
 	exe_l2.frames = 15;
 	exe_l2.hits = (Rectcol*)gfc_allocate_array(sizeof(Rectcol), exe_l2.frames);
@@ -113,6 +119,7 @@ void attack_init()
 	exe.light2 = &exe_l2;
 	exe.heavy = &exe_h;
 
+	shin_l1.damage = 30;
 	shin_l1.speed = 1;
 	shin_l1.frames = 15;
 	shin_l1.hits = (Rectcol*)gfc_allocate_array(sizeof(Rectcol), shin_l1.frames);
@@ -133,6 +140,7 @@ void attack_init()
 	collider_new(&shin_l1.hits[13], vector3d(-3.5, -6, -1), vector3d(1.5, 1.5, 1.5), Kinematic);
 	collider_new(&shin_l1.hits[14], vector3d(-3.5, -8, -1), vector3d(1.5, 1.5, 1.5), Kinematic);
 
+	shin_l2.damage = 10;
 	shin_l2.speed = 1;
 	shin_l2.frames = 15;
 	shin_l2.hits = (Rectcol*)gfc_allocate_array(sizeof(Rectcol), shin_l2.frames);

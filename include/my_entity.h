@@ -19,6 +19,7 @@ typedef struct Entity_S
 	float rotheight;
 	Model *model;
 	Matrix4 modelmat;
+	float frame;
 
 	Uint8 grounded;
 	float vel;		//==========================

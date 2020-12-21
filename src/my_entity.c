@@ -75,8 +75,8 @@ void entity_draw(Entity *self, Uint32 buffer, VkCommandBuffer command)
 	if (self->_dead)
 		return;
 	if (self->model != NULL)
-	{
-		gf3d_model_draw(self->model, buffer, command, self->modelmat);
+	{ 
+		gf3d_model_draw(self->model, buffer, command, self->modelmat, self->model->frameCount);
 	}
 	if (self->col.colmodel != NULL)
 	{

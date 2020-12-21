@@ -3,7 +3,11 @@
 
 #include "my_entity.h"
 #include "my_player.h"
-
+#include "my_multiplayer.h"
+#include "my_button.h"
+#include "my_attack.h"
+#include "my_bot.h"
+#include "my_item.h"
 #include "simple_logger.h"
 #include "gfc_vector.h"
 #include "gfc_matrix.h"
@@ -13,9 +17,8 @@
 #include "gf3d_swapchain.h"
 #include "gf3d_model.h"
 #include "gf3d_camera.h"
-#include "gf3d_texture.h"
 
-#include "my_attack.h"
+#include "gfc_audio.h"
 
 void ground_set(Entity *ground_cols[22])
 {
@@ -190,38 +193,6 @@ void interactable_set(Entity *i_conv, Entity *i_jump, Entity *i_spik, Entity *i_
 	p->t2.z += 5;
 }
 
-void enet_start_client(ENetAddress *a, ENetPeer *p, ENetHost *h, ENetEvent *e, Uint8 *connect)
-{
-	enet_address_set_host(a, "69.119.6.205");
-	a->port = 9191;
-
-	p = enet_host_connect(h, a, 1, 0);
-	if (p == NULL)
-	{
-		slog("No available peers");
-		connect = false;
-	}
-	else
-	{
-		if (enet_host_service(h, e, 5000) > 0 && e->type == ENET_EVENT_TYPE_CONNECT)
-		{
-			slog("Connected to 69.119.6.205:9191");
-			connect = true;
-		}
-		else
-		{
-			slog("Connection to 69.119.6.205:9191 failed");
-			enet_peer_reset(p);
-			connect = false;
-		}
-	}
-}
-
-void enet_start_server()
-{
-
-}
-
 int main(int argc, char *argv[])
 {
 	int done = 0;
@@ -258,13 +229,17 @@ int main(int argc, char *argv[])
 	Entity *ground_cols[22];
 
 	Uint8 enetinit = true;
-	Uint8 isserver = false;
+	Uint8 isserver = true;
 	Uint8 connected = false;
 
-	ENetHost* host = NULL;
-	ENetAddress address;
-	ENetEvent event;
-	ENetPeer* peer = NULL;
+	ENetHost* hostptr = NULL;
+	ENetHost** host = &hostptr;
+	ENetAddress addr;
+	ENetAddress* address = &addr;
+	ENetEvent eventval;
+	ENetEvent* event = &eventval;
+	ENetPeer* peerptr = NULL;
+	ENetPeer** peer = &peerptr;
 	ENetPacket* pack = NULL;
 	ENetPacket* recieved = NULL;
 
@@ -273,6 +248,37 @@ int main(int argc, char *argv[])
 	Vector3D recievepos = vector3d(0, 0, 0);
 	const Vector3D* recieve = &recievepos;
 
+	Sprite *hud, *stam, *start, *edit, *exit, *menubg, *cursor;
+	Button start_button, edit_button, exit_button;
+	float bgframe = 0;
+
+	Uint8 menu = false;
+	Uint8 mainmenu = true;
+	//editor stuff
+	Uint8 editor = false;
+
+	Entity *cube;
+
+	Sprite *arrow_inc_1, *arrow_inc_2, *arrow_inc_3, *arrow_inc_4, *arrow_inc_5, *arrow_inc_6;
+	Sprite *arrow_dec_1, *arrow_dec_2, *arrow_dec_3, *arrow_dec_4, *arrow_dec_5, *arrow_dec_6;
+	Button pos_x_button_inc, pos_y_button_inc, pos_z_button_inc;
+	Button pos_x_button_dec, pos_y_button_dec, pos_z_button_dec;
+	Button size_x_button_inc, size_y_button_inc, size_z_button_inc;
+	Button size_x_button_dec, size_y_button_dec, size_z_button_dec;
+
+	Bot bot;
+
+	Item item;
+
+	Sound *bgtrack;
+
+	FILE *cfg;
+	const char cfgcontents[60];
+	const char ipaddr[12];
+	const char portstr[6];
+	const char serverbool[1];
+	int portint;
+	int x = 0;
 	for (a = 1; a < argc; a++)
 	{
 		if (strcmp(argv[a], "-disable_validate") == 0)
@@ -295,11 +301,9 @@ int main(int argc, char *argv[])
 	player_manager_init(16);
 	attack_init();
 	class_init();
-	if (enet_initialize() != 0)
-	{
-		slog("error initializing enet");
-		enetinit = false;
-	}
+	enetinit = multiplayer_init();
+	gfc_audio_init(16, 4, 0, 8, 0, 0);
+
 	slog_sync();
 	
 	collider_set_draw(true);
@@ -308,20 +312,50 @@ int main(int argc, char *argv[])
 
 	ground_set(ground_cols);
 
-	p = player_new(1);
-	p->ent->model = gf3d_model_load("dino");
-
 	interactable_set(i_conv, i_jump, i_spik, i_spin, i_tele1, i_tele2);
 
 	ground->model = gf3d_model_load("Map");
 
 	ground->position = vector3d(0, 0, -10);
 
-	temp_player = entity_new();
-	temp_player->model = gf3d_model_load("dino");
+	cube = entity_new();
+	cube->model = gf3d_model_load("cube2");
+
+	item_new(&item, 0);
+
+	start = gf3d_sprite_load("images/start.png", -1, -1, 0);
+	edit = gf3d_sprite_load("images/edit.png", -1, -1, 0);
+	exit = gf3d_sprite_load("images/exit.png", -1, -1, 0);
+	menubg = gf3d_sprite_load("images/bg.png", 2400, 1400, 14);
+	cursor = gf3d_sprite_load("images/cursor.png", -1, -1, 0);
+
+	button_new(&start_button, start, vector2d(600, 400));
+	button_new(&edit_button, edit, vector2d(600, 500));
+	button_new(&exit_button, exit, vector2d(600, 600));
+
+	cfg = fopen("config.txt", "r");
+	if (cfg)
+	{
+		fgets(&cfgcontents, 60, cfg);
+		strcpy(&ipaddr, &cfgcontents);
+		fgets(&cfgcontents, 60, cfg);
+		strcpy(&portstr, &cfgcontents);
+		portint = atoi(&portstr);
+		fgets(&cfgcontents, 60, cfg);
+		strcpy(&serverbool, &cfgcontents);
+		isserver = atoi(&serverbool);
+		fclose(cfg);
+	}
+	else
+	{
+		connected = false;
+		enetinit = false;
+		slog("no enet config file!");
+	}
 
 	// main game loop
 	slog("gf3d main loop begin");
+	
 	slog_sync();
 
 	SDL_SetRelativeMouseMode(1);
@@ -330,268 +364,423 @@ int main(int argc, char *argv[])
 
 	gf3d_camera_set(gf3d_vgraphics_get_uniform_buffer_object().view);
 
-	collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 10), Kinematic);
-
-	//ENET
-	if (enetinit)
-	{
-		if (!isserver)
-		{
-			//CLIENT SETUP
-			enet_address_set_host(&address, "69.119.6.205");
-			address.port = 9191;
-
-			host = enet_host_create(NULL, 1, 1, 0, 0);
-			if (host == NULL)
-			{
-				slog("Error creating client");
-			}
-
-			peer = enet_host_connect(host, &address, 1, 0);
-			if (peer == NULL)
-			{
-				slog("No available peers");
-				connected = false;
-			}
-			else
-			{
-				if (enet_host_service(host, &event, 5000) > 0 
-					&& event.type == ENET_EVENT_TYPE_CONNECT)
-				{
-					slog("Connected to 69.119.6.205:9191");
-					connected = true;
-				}
-				else
-				{
-					slog("Connection to 69.119.6.205:9191 failed");
-					enet_peer_reset(peer);
-					connected = false;
-				}
-			}
-		}
-		else
-		{
-			//SERVER SETUP
-			address.host = ENET_HOST_ANY;
-			address.port = 9191;
-
-			host = enet_host_create(&address, 8, 1, 0, 0); //8 connections maximum, 1 channel, no bandwith limits
-			if (host == NULL)
-			{
-				slog("Error creating server");
-				connected = false;
-			}
-			else
-			{
-				connected = true;
-			}
-		}
-
-		atexit(enet_deinitialize);
-	}
-	//ENET
+	bgtrack = gfc_sound_load("sounds/Zone.wav", 0.02, -1);
+	//gfc_sound_play(bgtrack, 100, 0.02, -1, -1);
 
 	while (!done)
 	{
-		//ENET
-		if (connected)
+		if (mainmenu)
 		{
-			if (isserver)
-			{
-				//Server update
-				while (enet_host_service(host, &event, 0) > 0)
-				{
-					if (event.type == ENET_EVENT_TYPE_CONNECT)
-					{
-						slog("A new client connected from %x:%u",
-							event.peer->address.host,
-							event.peer->address.port);
-					}
-					else if (event.type == ENET_EVENT_TYPE_RECEIVE)
-					{
-						recieve = event.packet->data;
-						recievepos.x = recieve->x;
-						recievepos.y = recieve->y;
-						recievepos.z = recieve->z;
-						
-						temp_player->position.x = recievepos.x;
-						temp_player->position.y = recievepos.y;
-						temp_player->position.z = recievepos.z;
+			SDL_PumpEvents();
+			SDL_GetMouseState(&mousex, &mousey);
+			keys = SDL_GetKeyboardState(NULL);
 
-						pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-						enet_peer_send(event.peer, 0, pack);
-					}
-					else if (event.type == ENET_EVENT_TYPE_DISCONNECT)
+			bufferFrame = gf3d_vgraphics_render_begin();
+			gf3d_pipeline_reset_frame(gf3d_vgraphics_get_graphics_overlay_pipeline(), bufferFrame);
+
+			commandBuffer = gf3d_command_rendering_begin(bufferFrame, gf3d_vgraphics_get_graphics_overlay_pipeline());
+			
+			gf3d_sprite_draw(menubg, vector2d(0, 0), vector2d(1, 1), bgframe, bufferFrame, commandBuffer);
+			gf3d_sprite_draw(start_button.sprite, vector2d(start_button.position.x, start_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+			gf3d_sprite_draw(edit_button.sprite, vector2d(edit_button.position.x, edit_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+			gf3d_sprite_draw(exit_button.sprite, vector2d(exit_button.position.x, exit_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+			gf3d_sprite_draw(cursor, vector2d(mousex - (cursor->texture->width * 0.25), mousey - (cursor->texture->height * 0.25)), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+
+			if (button_check(&start_button, vector2d(mousex, mousey)))
+			{
+				if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+				{
+					//ENET
+					if (enetinit)
 					{
-						slog("Client %x:%u has disconnected",
-							event.peer->address.host,
-							event.peer->address.port);
-						//Set data to NULL
+						if (!isserver)
+						{
+							//CLIENT SETUP
+							connected = multiplayer_client_create(address, host, peer, event, portint, &ipaddr);
+						}
+						else
+						{
+							//SERVER SETUP
+							connected = multiplayer_server_create(address, host, portint);
+						}
+					}
+					//ENET
+					hud = gf3d_sprite_load("images/hud.png", 960, 120, 10);
+					stam = gf3d_sprite_load("images/hud_stam.png", 480, 60, 10);
+
+					p = player_new(1);
+					p->ent->model = gf3d_model_load("dino");
+
+					collider_new(&p->ent->col, vector3d(0, 0, 0), vector3d(5, 5, 10), Kinematic);
+
+					bot_new(&bot, p);
+					bot.ent->model = gf3d_model_load("dino");
+
+					mainmenu = false;
+				}
+			}
+			else if (button_check(&edit_button, vector2d(mousex, mousey)))
+			{
+				if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+				{
+					editor = true;
+					mainmenu = false;
+
+					arrow_inc_1 = gf3d_sprite_load("images/arrow.png", -1, -1, 0);
+					arrow_inc_2 = gf3d_sprite_load("images/arrow.png", -1, -1, 0);
+					arrow_inc_3 = gf3d_sprite_load("images/arrow.png", -1, -1, 0);
+				
+					arrow_dec_1 = gf3d_sprite_load("images/arrow2.png", -1, -1, 0);
+					arrow_dec_2 = gf3d_sprite_load("images/arrow2.png", -1, -1, 0);
+					arrow_dec_3 = gf3d_sprite_load("images/arrow2.png", -1, -1, 0);
+
+					button_new(&pos_x_button_inc, arrow_inc_1, vector2d(1100, 500));
+					button_new(&pos_y_button_inc, arrow_inc_2, vector2d(1100, 550));
+					button_new(&pos_z_button_inc, arrow_inc_3, vector2d(1100, 600));
+
+					button_new(&pos_x_button_dec, arrow_dec_1, vector2d(1000, 500));
+					button_new(&pos_y_button_dec, arrow_dec_2, vector2d(1000, 550));
+					button_new(&pos_z_button_dec, arrow_dec_3, vector2d(1000, 600));
+				}
+			}
+			else if (button_check(&exit_button, vector2d(mousex, mousey)))
+			{
+				if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+				{
+					done = 1;
+				}
+			}
+
+			gf3d_command_rendering_end(commandBuffer);
+			gf3d_vgraphics_render_end(bufferFrame);
+
+			bgframe += 0.01;
+			if (bgframe >= 13)
+				bgframe = 0;
+
+			if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
+			continue;
+		}
+		else if (editor)
+		{
+			SDL_PumpEvents();
+			SDL_GetMouseState(&mousex, &mousey);
+			keys = SDL_GetKeyboardState(NULL);
+
+			if (current_ms >= ms_per_tick)
+			{
+				if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+				{
+					if (button_check(&pos_x_button_inc, vector2d(mousex, mousey)))
+					{
+						cube->position.x++;
+					}
+					else if (button_check(&pos_y_button_inc, vector2d(mousex, mousey)))
+					{
+						cube->position.y++;
+					}
+					else if (button_check(&pos_z_button_inc, vector2d(mousex, mousey)))
+					{
+						cube->position.z++;
+					}
+					else if (button_check(&pos_x_button_dec, vector2d(mousex, mousey)))
+					{
+						cube->position.x--;
+					}
+					else if (button_check(&pos_y_button_dec, vector2d(mousex, mousey)))
+					{
+						cube->position.y--;
+					}
+					else if (button_check(&pos_z_button_dec, vector2d(mousex, mousey)))
+					{
+						cube->position.z--;
 					}
 				}
+
+				if (menu)
+				{
+					if (button_check(&start_button, vector2d(mousex, mousey)))
+					{
+						if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+						{
+							editor = false;
+							menu = false;
+						}
+					}
+					else if (button_check(&edit_button, vector2d(mousex, mousey)))
+					{
+						if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+						{
+							editor = true;
+						}
+					}
+					else if (button_check(&exit_button, vector2d(mousex, mousey)))
+					{
+						if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+						{
+							done = 1;
+						}
+					}
+				}
+
+				entity_update(cube);
+				current_ms = 0;
+				last_tick = SDL_GetTicks();
 			}
 			else
 			{
-				//Client update
-				while (enet_host_service(host, &event, 0) > 0)
+				current_ms = SDL_GetTicks() - last_tick;
+			}
+
+			bufferFrame = gf3d_vgraphics_render_begin();
+			gf3d_pipeline_reset_frame(gf3d_vgraphics_get_graphics_model_pipeline(), bufferFrame);
+			gf3d_pipeline_reset_frame(gf3d_vgraphics_get_graphics_overlay_pipeline(), bufferFrame);
+
+			commandBuffer = gf3d_command_rendering_begin(bufferFrame, gf3d_vgraphics_get_graphics_model_pipeline());
+
+			entity_draw(cube, bufferFrame, commandBuffer);
+
+			gf3d_command_rendering_end(commandBuffer);
+
+			commandBuffer = gf3d_command_rendering_begin(bufferFrame, gf3d_vgraphics_get_graphics_overlay_pipeline());
+
+				gf3d_sprite_draw(pos_x_button_inc.sprite, vector2d(pos_x_button_inc.position.x, pos_x_button_inc.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(pos_y_button_inc.sprite, vector2d(pos_y_button_inc.position.x, pos_y_button_inc.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(pos_z_button_inc.sprite, vector2d(pos_z_button_inc.position.x, pos_z_button_inc.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+
+				gf3d_sprite_draw(pos_x_button_dec.sprite, vector2d(pos_x_button_dec.position.x, pos_x_button_dec.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(pos_y_button_dec.sprite, vector2d(pos_y_button_dec.position.x, pos_y_button_dec.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(pos_z_button_dec.sprite, vector2d(pos_z_button_dec.position.x, pos_z_button_dec.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+
+				gf3d_sprite_draw(cursor, vector2d(mousex - (cursor->texture->width * 0.25), mousey - (cursor->texture->height * 0.25)), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+
+				if (menu)
 				{
-					if (event.type == ENET_EVENT_TYPE_RECEIVE)
+					gf3d_sprite_draw(start_button.sprite, vector2d(start_button.position.x, start_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+					gf3d_sprite_draw(edit_button.sprite, vector2d(edit_button.position.x, edit_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+					gf3d_sprite_draw(exit_button.sprite, vector2d(exit_button.position.x, exit_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+					gf3d_sprite_draw(cursor, vector2d(mousex - (cursor->texture->width * 0.25), mousey - (cursor->texture->height * 0.25)), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				}
+
+			gf3d_command_rendering_end(commandBuffer);
+			gf3d_vgraphics_render_end(bufferFrame);
+
+			if (keys[SDL_SCANCODE_ESCAPE])menu = 1; // exit condition
+			continue;
+		}
+		else
+		{
+			//ENET
+			if (connected)
+			{
+				multiplayer_host_service(isserver, host, event);
+			}
+			//ENET
+
+			SDL_PumpEvents();   // update SDL's internal event structures
+			keys = SDL_GetKeyboardState(NULL); // get the keyboard state for this frame
+			if (!menu)
+				SDL_GetRelativeMouseState(&mousex, &mousey);
+			else
+			{
+				SDL_GetMouseState(&mousex, &mousey);
+			}
+			//update game things here
+
+			if (keys[SDL_SCANCODE_W] == true)
+			{
+				inputs[up] = true;
+			}
+			else { inputs[up] = false; }
+
+			if (keys[SDL_SCANCODE_A] == true)
+			{
+				inputs[left] = true;
+			}
+			else { inputs[left] = false; }
+
+			if (keys[SDL_SCANCODE_S] == true)
+			{
+				inputs[down] = true;
+			}
+			else { inputs[down] = false; }
+
+			if (keys[SDL_SCANCODE_D] == true)
+			{
+				inputs[right] = true;
+			}
+			else { inputs[right] = false; }
+
+			if (keys[SDL_SCANCODE_SPACE] == true)
+			{
+				inputs[jump] = true;
+			}
+			else { inputs[jump] = false; }
+
+			if (keys[SDL_SCANCODE_E] == true)
+			{
+				inputs[ability] = true;
+			}
+			else { inputs[ability] = false; }
+
+			if (keys[SDL_SCANCODE_R] == true)
+			{
+				inputs[toss] = true;
+			}
+			else { inputs[toss] = false; }
+
+			if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+			{
+				inputs[attack] = 1;
+			}
+			else if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_RMASK))
+			{
+				inputs[attack] = 2;
+			}
+			else { inputs[attack] = 0; }
+
+
+			if (!p->attacking)
+			{
+				if (keys[SDL_SCANCODE_1] == true)
+				{
+					p->class_type = 0;
+					p->attack = 0;
+				}
+				else if (keys[SDL_SCANCODE_2] == true)
+				{
+					p->class_type = 1;
+					p->attack = 0;
+				}
+				else if (keys[SDL_SCANCODE_3] == true)
+				{
+					p->class_type = 2;
+					p->attack = 0;
+				}
+			}
+
+			if (current_ms >= ms_per_tick)
+			{
+				if (!p->ent->_dead)
+				{
+					if (!menu)
+						player_move(inputs, p->_playernum, mousex, mousey);
+				}
+				else if (p->respawn <= 0)
+				{
+					player_respawn(p);
+				}
+				else { p->respawn--; }
+
+				bot_update(&bot);
+				entity_update_all();
+				item_update(&item, p);
+
+				gfc_matrix_rotate(
+					ground->modelmat,
+					ground->modelmat,
+					1.5708,
+					vector3d(1, 0, 0));
+
+				current_ms = 0;
+				last_tick = SDL_GetTicks();
+			}
+			else
+			{
+				current_ms = SDL_GetTicks() - last_tick;
+			}
+
+			if (menu)
+			{
+				if (button_check(&start_button, vector2d(mousex, mousey)))
+				{
+					if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
 					{
-						recieve = event.packet->data;
-						recievepos.x = recieve->x;
-						recievepos.y = recieve->y;
-						recievepos.z = recieve->z;
-						
-						temp_player->position.x = recievepos.x;
-						temp_player->position.y = recievepos.y;
-						temp_player->position.z = recievepos.z;
+						menu = false;
+					}
+				}
+				else if (button_check(&edit_button, vector2d(mousex, mousey)))
+				{
+					if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+					{
+						menu = false;
+						editor = true;
+					}
+				}
+				else if (button_check(&exit_button, vector2d(mousex, mousey)))
+				{
+					if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
+					{
+						done = 1;
 					}
 				}
 			}
 
-		}
-		//ENET
+			// configure render command for graphics command pool
+			// for each mesh, get a command and configure it from the pool
+			bufferFrame = gf3d_vgraphics_render_begin();
+			gf3d_pipeline_reset_frame(gf3d_vgraphics_get_graphics_model_pipeline(), bufferFrame);
+			gf3d_pipeline_reset_frame(gf3d_vgraphics_get_graphics_overlay_pipeline(), bufferFrame);
+			commandBuffer = gf3d_command_rendering_begin(bufferFrame, gf3d_vgraphics_get_graphics_model_pipeline());
 
-		SDL_PumpEvents();   // update SDL's internal event structures
-		keys = SDL_GetKeyboardState(NULL); // get the keyboard state for this frame
-		SDL_GetRelativeMouseState(&mousex, &mousey);
-		
-		//update game things here
+			entity_draw_all(bufferFrame, commandBuffer);
+			item_draw(&item, bufferFrame, commandBuffer);
 
-		if (keys[SDL_SCANCODE_W] == true)
-		{
-			inputs[up] = true;
-		}
-		else { inputs[up] = false; }
-
-		if (keys[SDL_SCANCODE_A] == true)
-		{
-			inputs[left] = true;
-		}
-		else { inputs[left] = false; }
-
-		if (keys[SDL_SCANCODE_S] == true)
-		{
-			inputs[down] = true;
-		}
-		else { inputs[down] = false; }
-
-		if (keys[SDL_SCANCODE_D] == true)
-		{
-			inputs[right] = true;
-		}
-		else { inputs[right] = false; }
-
-		if (keys[SDL_SCANCODE_SPACE] == true)
-		{
-			inputs[jump] = true;
-		}
-		else { inputs[jump] = false; }
-
-		if (keys[SDL_SCANCODE_E] == true)
-		{
-			inputs[ability] = true;
-		}
-		else { inputs[ability] = false; }
-
-		if (keys[SDL_SCANCODE_R] == true)
-		{
-			inputs[toss] = true;
-		}
-		else { inputs[toss] = false; }
-
-		if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_LMASK))
-		{
-			inputs[attack] = 1;
-		}
-		else if (SDL_GetMouseState(NULL, NULL, SDL_BUTTON_RMASK))
-		{ 
-			inputs[attack] = 2;
-		}
-		else { inputs[attack] = 0; }
-
-
-		if (!p->attacking)
-		{
-			if (keys[SDL_SCANCODE_1] == true)
-			{
-				p->class_type = 0;
-				p->attack = 0;
-			}
-			else if (keys[SDL_SCANCODE_2] == true)
-			{
-				p->class_type = 1;
-				p->attack = 0;
-			}
-			else if (keys[SDL_SCANCODE_3] == true)
-			{
-				p->class_type = 2;
-				p->attack = 0;
-			}
-		}
-
-		if (current_ms >= ms_per_tick)
-		{
 			if (!p->ent->_dead)
-				player_move(inputs, p->_playernum, mousex, mousey);
-			else if (p->respawn <= 0)
+				player_draw_attack(bufferFrame, commandBuffer, p->_playernum);
+
+			gf3d_command_rendering_end(commandBuffer);
+
+			//2D OVERLAY
+			commandBuffer = gf3d_command_rendering_begin(bufferFrame, gf3d_vgraphics_get_graphics_overlay_pipeline());
+			if (menu)
 			{
-				player_respawn(p);
+				gf3d_sprite_draw(start_button.sprite, vector2d(start_button.position.x, start_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(edit_button.sprite, vector2d(edit_button.position.x, edit_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(exit_button.sprite, vector2d(exit_button.position.x, exit_button.position.y), vector2d(1, 1), 0, bufferFrame, commandBuffer);
+				gf3d_sprite_draw(cursor, vector2d(mousex - (cursor->texture->width * 0.25), mousey - (cursor->texture->height * 0.25)), vector2d(1, 1), 0, bufferFrame, commandBuffer);
 			}
-			else { p->respawn--; }
+			else
+			{
+				if (p->health != 0)
+					gf3d_sprite_draw(hud, vector2d(600 - ((hud->texture->width * 0.25) / 10), 700 - ((hud->texture->height * 0.5)/ 10)), vector2d(1, 1), p->health-1, bufferFrame, commandBuffer);
+				if (p->stamina > 0)
+					gf3d_sprite_draw(stam, vector2d(600 - ((stam->texture->width * 0.25) / 10), 640 - ((stam->texture->height * 0.5) / 10)), vector2d(1, 1), p->stamina - 1, bufferFrame, commandBuffer);
+				else
+					gf3d_sprite_draw(stam, vector2d(600 - ((stam->texture->width * 0.25) / 10), 640 - ((stam->texture->height * 0.5) / 10)), vector2d(1, 1), p->stamina, bufferFrame, commandBuffer);
+			}
+			gf3d_command_rendering_end(commandBuffer);
 
-			entity_update_all();
+			gf3d_vgraphics_render_end(bufferFrame);
 
-			gfc_matrix_rotate(
-				ground->modelmat,
-				ground->modelmat,
-				1.5708,
-				vector3d(1, 0, 0));
-
-			current_ms = 0;
-			last_tick = SDL_GetTicks();
-		}
-		else
-		{
-			current_ms = SDL_GetTicks() - last_tick;
-		}
-
-		// configure render command for graphics command pool
-		// for each mesh, get a command and configure it from the pool
-		bufferFrame = gf3d_vgraphics_render_begin();
-		gf3d_pipeline_reset_frame(gf3d_vgraphics_get_graphics_pipeline(), bufferFrame);
-		commandBuffer = gf3d_command_rendering_begin(bufferFrame);
-
-		entity_draw_all(bufferFrame, commandBuffer);
-
-		if (!p->ent->_dead)
-			player_draw_attack(bufferFrame, commandBuffer, p->_playernum);
-
-		gf3d_command_rendering_end(commandBuffer);
-
-		gf3d_vgraphics_render_end(bufferFrame);
-
-		/*frames++;
-		if (time(0) - last_second >= 1)
-		{
+			/*
+			frames++;
+			if (time(0) - last_second >= 1)
+			{
 			slog("%f", frames);
 			frames = 0;
 			last_second = time(0);
-		}*/
+			}
+			*/
+			
 
-		if (keys[SDL_SCANCODE_ESCAPE])done = 1; // exit condition
+			//ENET
+			sendpos.x = p->ent->position.x;
+			sendpos.y = p->ent->position.y;
+			sendpos.z = p->ent->position.z;
 
-		//ENET
-		sendpos.x = p->ent->position.x;
-		sendpos.y = p->ent->position.y;
-		sendpos.z = p->ent->position.z;
-
-		if (connected && !isserver)
-		{
-			pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
-			enet_peer_send(peer, 0, pack);
+			if (connected && !isserver)
+			{
+				pack = enet_packet_create(send, sizeof(Vector3D), ENET_PACKET_FLAG_RELIABLE);
+				enet_peer_send(peer, 0, pack);
+			}
+			//ENET
 		}
-		//ENET
+		
+		if (keys[SDL_SCANCODE_ESCAPE])
+		{
+			menu = 1;
+		}
 	}
 
 	vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());

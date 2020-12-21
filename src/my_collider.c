@@ -127,5 +127,5 @@ void collider_draw(Rectcol *rc, Uint32 buffer, VkCommandBuffer command)
 	modelmat[2][2] *= rc->dimension.z * 0.5;
 	modelmat[3][3] *= 1;
 
-	gf3d_model_draw(rc->colmodel, buffer, command, modelmat);
+	gf3d_model_draw(rc->colmodel, buffer, command, modelmat, rc->colmodel->frameCount);
 }
