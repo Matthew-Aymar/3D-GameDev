@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 	button_new(&edit_button, edit, vector2d(600, 500));
 	button_new(&exit_button, exit, vector2d(600, 600));
 
-	cfg = fopen("config.txt", "r");
+	/*cfg = fopen("config.txt", "r");
 	if (cfg)
 	{
 		fgets(&cfgcontents, 60, cfg);
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
 		connected = false;
 		enetinit = false;
 		slog("no enet config file!");
-	}
+	}*/
 
 	// main game loop
 	slog("gf3d main loop begin");
@@ -396,12 +396,12 @@ int main(int argc, char *argv[])
 						if (!isserver)
 						{
 							//CLIENT SETUP
-							connected = multiplayer_client_create(address, host, peer, event, portint, &ipaddr);
+							connected = multiplayer_client_create(address, host, peer, event, 9191, "69.119.6.205");
 						}
 						else
 						{
 							//SERVER SETUP
-							connected = multiplayer_server_create(address, host, portint);
+							connected = multiplayer_server_create(address, host, 9191);
 						}
 					}
 					//ENET
